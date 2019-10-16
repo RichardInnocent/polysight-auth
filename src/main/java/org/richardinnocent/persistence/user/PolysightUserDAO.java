@@ -1,6 +1,7 @@
 package org.richardinnocent.persistence.user;
 
 import org.richardinnocent.models.user.PolysightUser;
+import org.richardinnocent.persistence.exception.InsertionException;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -16,8 +17,17 @@ public class PolysightUserDAO {
     this.entityManager = entityManager;
   }
 
-  public void save(PolysightUser polysightUser) {
-    entityManager.persist(polysightUser);
+  /**
+   * Attemps to save the user to the database.
+   * @param polysightUser The user to save.
+   * @throws InsertionException Thrown if there is a problem inserting the user.
+   */
+  public void save(PolysightUser polysightUser) throws InsertionException {
+    try {
+      entityManager.persist(polysightUser);
+    } catch (RuntimeException e) {
+      throw new InsertionException(e);
+    }
   }
 
 }

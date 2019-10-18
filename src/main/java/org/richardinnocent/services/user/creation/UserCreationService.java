@@ -3,6 +3,7 @@ package org.richardinnocent.services.user.creation;
 import org.joda.time.DateTime;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
+import org.richardinnocent.persistence.exception.InsertionException;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
@@ -23,7 +24,7 @@ public class UserCreationService {
     this.userDao = userDao;
   }
 
-  public PolysightUser createUser(RawPolysightUser rawUser) {
+  public PolysightUser createUser(RawPolysightUser rawUser) throws InsertionException {
     PolysightUser user = new PolysightUser();
     user.setFullName(rawUser.getFullName());
     user.setEmail(rawUser.getEmail());

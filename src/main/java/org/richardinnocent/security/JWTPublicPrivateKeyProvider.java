@@ -7,13 +7,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RSAPublicPrivateKeyProvider implements PublicPrivateKeyProvider {
+public class JWTPublicPrivateKeyProvider implements PublicPrivateKeyProvider {
 
   private final String publicKey;
   private final String privateKey;
 
-  public RSAPublicPrivateKeyProvider(@Value("${rsa.location.public}") String publicKeyLocation,
-                                     @Value("${rsa.location.private}") String privateKeyLocation,
+  public JWTPublicPrivateKeyProvider(@Value("${key.location.public}") String publicKeyLocation,
+                                     @Value("${key.location.private}") String privateKeyLocation,
                                      FileContentReader fileContentReader)
       throws NullPointerException, IOException {
     publicKey =

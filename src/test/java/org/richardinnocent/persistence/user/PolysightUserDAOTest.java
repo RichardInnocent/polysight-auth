@@ -1,5 +1,6 @@
 package org.richardinnocent.persistence.user;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.persistence.exception.DeletionException;
@@ -16,7 +17,13 @@ import static org.mockito.Mockito.*;
 public class PolysightUserDAOTest {
 
   private final EntityManager entityManager = mock(EntityManager.class);
-  private final PolysightUserDAO dao = new PolysightUserDAO(entityManager);
+  private final PolysightUserDAO dao =
+      new PolysightUserDAO(mock(PolysightUserRepository.class));
+
+  @Before
+  public void configureEntityManager() {
+    dao.setEntityManager(entityManager);
+  }
 
   @Test
   public void testGetWhenEntityFound() {

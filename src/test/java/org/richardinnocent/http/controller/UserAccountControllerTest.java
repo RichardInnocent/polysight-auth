@@ -1,20 +1,21 @@
 package org.richardinnocent.http.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.richardinnocent.http.mapper.HttpObjectMapper;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
-import org.richardinnocent.persistence.exception.DeletionException;
-import org.richardinnocent.persistence.exception.NotFoundException;
 import org.richardinnocent.services.user.creation.UserCreationService;
 import org.richardinnocent.services.user.deletion.UserDeletionService;
 import org.richardinnocent.services.user.find.UserSearchService;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -22,21 +23,18 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import java.util.Optional;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.util.UriUtils;
 
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(UserAccountController.class)
+@SpringBootTest
 @SuppressWarnings("unused")
 public class UserAccountControllerTest {
 
-  private static final String PREFIX = "/user";
   private static final ObjectMapper MAPPER = new HttpObjectMapper();
 
   private MockMvc mvc;
@@ -50,8 +48,13 @@ public class UserAccountControllerTest {
   @MockBean
   private UserDeletionService deletionService;
 
+  @BeforeClass
+  public static void setUpMapper() {
+    MAPPER.setSerializationInclusion(Include.NON_NULL);
+  }
+
   @Before
-  public void setUpMapper() {
+  public void setUpHttpMapper() {
     UserAccountController controller =
         new UserAccountController(searchService, creationService, deletionService);
 
@@ -64,45 +67,31 @@ public class UserAccountControllerTest {
   }
 
   @Test
-  public void testGetAccount() throws Exception {
-    long id = 123L;
-    PolysightUser user = createFullyPopulatedPolysightUser(id);
-
-    when(searchService.findById(id)).thenReturn(Optional.of(user));
-    mvc.perform(get(PREFIX + "?id=" + id))
-       .andExpect(status().isOk())
-       .andExpect(content().string(MAPPER.writeValueAsString(user)))
-       .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
-  }
-
-  @Test
-  public void testGetAccountWhenNotFound() throws Exception {
-    long id = 123L;
-    when(searchService.findById(id)).thenReturn(Optional.empty());
-    mvc.perform(get(PREFIX + "?id=" + id))
-       .andExpect(status().isOk())
-       .andExpect(content().string(""));
-  }
-
-  @Test
   public void testCreateAccountAttemptsToCreateAccount() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
-    String account = MAPPER.writeValueAsString(rawUser);
+    String account = toFormData(rawUser);
 
     PolysightUser user = createFullyPopulatedPolysightUser(123L);
     when(creationService.createUser(rawUser)).thenReturn(user);
 
-    postContentToPath(account, "/")
-        .andExpect(status().isCreated())
-        .andExpect(content().json(MAPPER.writeValueAsString(user)));
-    verify(creationService, times(1)).createUser(rawUser);
+    postToPath(account, "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isOk());
+    verify(creationService, times(1)).createUser(eq(rawUser));
   }
 
   @Test
   public void testCreateAccountWithNoEmailIsBadRequest() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
     rawUser.setEmail(null);
-    postContentToPath(MAPPER.writeValueAsString(rawUser), "/")
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithEmailShorterThan3CharactersIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setEmail("NA");
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().isBadRequest());
   }
 
@@ -110,7 +99,7 @@ public class UserAccountControllerTest {
   public void testCreateAccountWithNoNameIsBadRequest() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
     rawUser.setFullName(null);
-    postContentToPath(MAPPER.writeValueAsString(rawUser), "/")
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().isBadRequest());
   }
 
@@ -118,7 +107,7 @@ public class UserAccountControllerTest {
   public void testCreateAccountWithNoDateOfBirthIsBadRequest() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
     rawUser.setDateOfBirth(null);
-    postContentToPath(MAPPER.writeValueAsString(rawUser), "/")
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().isBadRequest());
   }
 
@@ -126,35 +115,16 @@ public class UserAccountControllerTest {
   public void testCreateAccountWithNoPasswordIsBadRequest() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
     rawUser.setPassword(null);
-    postContentToPath(MAPPER.writeValueAsString(rawUser), "/")
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().isBadRequest());
   }
 
   @Test
-  public void testDeleteAccount() throws Exception {
-    long id = 123L;
-    PolysightUser user = createFullyPopulatedPolysightUser(id);
-    when(deletionService.deleteUser(id)).thenReturn(user);
-    mvc.perform(delete(PREFIX + "?id=" + id))
-       .andExpect(status().isOk())
-       .andExpect(content().json(MAPPER.writeValueAsString(user)));
-  }
-
-  @Test
-  public void testDeleteAccountReturnsBadRequestWhenUserNotFound() throws Exception {
-    long id = 123L;
-    when(deletionService.deleteUser(id))
-        .thenThrow(NotFoundException.forEntityTypeWithId(PolysightUser.class, id));
-    mvc.perform(delete(PREFIX + "?id=" + id))
-       .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void testDeleteAccountReturnsInternalServerErrorWhenProblemDeleting() throws Exception {
-    long id = 123L;
-    when(deletionService.deleteUser(id)).thenThrow(new DeletionException());
-    mvc.perform(delete(PREFIX + "?id=" + id))
-       .andExpect(status().isInternalServerError());
+  public void testCreateAccountWithPasswordShortedThan8CharactersIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setPassword("7 chars");
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
   }
 
   private PolysightUser createFullyPopulatedPolysightUser(long id) {
@@ -169,7 +139,6 @@ public class UserAccountControllerTest {
     return user;
   }
 
-
   private RawPolysightUser createFullyPopulatedRawUser() {
     RawPolysightUser rawUser = new RawPolysightUser();
     rawUser.setEmail("test@polysight.org");
@@ -179,18 +148,25 @@ public class UserAccountControllerTest {
     return rawUser;
   }
 
-  @Test
-  public void testLoginIsNotImplemented() throws Exception {
-    postContentToPath("", "/login").andExpect(status().isNotImplemented());
+  @SuppressWarnings("unchecked")
+  private String toFormData(RawPolysightUser user) {
+    StringBuilder formData = new StringBuilder();
+    Map<String, Object> userMap = MAPPER.convertValue(user, Map.class);
+
+    userMap.forEach(
+        (key, value) ->
+            formData.append(key)
+                    .append('=')
+                    .append(UriUtils.encode(value.toString(), "UTF-8"))
+                    .append('&'));
+
+    return formData.length() > 0 ?
+        formData.substring(0, formData.length() - 1) : formData.toString();
   }
 
-  @Test
-  public void testValidateIsNotImplemented() throws Exception {
-    postContentToPath("", "/validate").andExpect(status().isNotImplemented());
-  }
-
-  private ResultActions postContentToPath(String content, String path) throws Exception {
-    return mvc.perform(post(PREFIX + path).content(content).contentType(MediaType.APPLICATION_JSON));
+  private ResultActions postToPath(String formData, String path, MediaType mediaType)
+      throws Exception {
+    return mvc.perform(post(path).content(formData).contentType(mediaType));
   }
 
 }

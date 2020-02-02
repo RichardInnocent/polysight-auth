@@ -1,9 +1,16 @@
 package org.richardinnocent.persistence.user;
 
+import java.util.Collections;
+import javax.persistence.PersistenceContext;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.persistence.exception.DeletionException;
 import org.richardinnocent.persistence.exception.InsertionException;
 import org.richardinnocent.persistence.exception.ReadException;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -12,11 +19,18 @@ import java.util.Optional;
 
 @Transactional
 @Repository
-public class PolysightUserDAO {
+public class PolysightUserDAO implements UserDetailsService {
 
-  private final EntityManager entityManager;
+  private final PolysightUserRepository userRepo;
+  private EntityManager entityManager;
 
-  public PolysightUserDAO(EntityManager entityManager) {
+  public PolysightUserDAO(PolysightUserRepository userRepo) {
+    this.userRepo = userRepo;
+  }
+
+  @PersistenceContext
+  @SuppressWarnings("unused")
+  public void setEntityManager(EntityManager entityManager) {
     this.entityManager = entityManager;
   }
 
@@ -33,6 +47,10 @@ public class PolysightUserDAO {
     } catch (RuntimeException e) {
       throw new ReadException(e);
     }
+  }
+
+  public Optional<PolysightUser> findByEmail(String email) {
+    return userRepo.findOne(hasEmail(email));
   }
 
   /**
@@ -59,6 +77,23 @@ public class PolysightUserDAO {
     } catch (RuntimeException e) {
       throw new DeletionException(e);
     }
+  }
+
+  @Override
+  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    Optional<PolysightUser> userOptional = findByEmail(email);
+    if (userOptional.isPresent()) {
+      PolysightUser user = userOptional.get();
+      return new User(user.getEmail(),
+                      user.getPassword(),
+                      Collections.emptyList());
+    } else {
+      throw new UsernameNotFoundException("Username " + email + " not found");
+    }
+  }
+
+  private static Specification<PolysightUser> hasEmail(String email) {
+    return (user, cq, cb) -> cb.equal(user.get("email"), email);
   }
 
 }

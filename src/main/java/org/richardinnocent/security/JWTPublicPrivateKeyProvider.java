@@ -1,34 +1,41 @@
 package org.richardinnocent.security;
 
-import java.io.IOException;
-import java.util.Objects;
-import org.richardinnocent.util.FileContentReader;
-import org.springframework.beans.factory.annotation.Value;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import org.richardinnocent.Qualifiers;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+/**
+ * Class to generate a public/private key pair for use specifically with generating/decoding JWT
+ * tokens.
+ */
 @Component
+@Qualifier(Qualifiers.JWT)
 public class JWTPublicPrivateKeyProvider implements PublicPrivateKeyProvider {
 
-  private final String publicKey;
-  private final String privateKey;
+  private final PublicKey publicKey;
+  private final PrivateKey privateKey;
 
-  public JWTPublicPrivateKeyProvider(@Value("${key.location.public}") String publicKeyLocation,
-                                     @Value("${key.location.private}") String privateKeyLocation,
-                                     FileContentReader fileContentReader)
-      throws NullPointerException, IOException {
-    publicKey =
-        fileContentReader.getFileContentsAtLocation(Objects.requireNonNull(publicKeyLocation));
-    privateKey =
-        fileContentReader.getFileContentsAtLocation(Objects.requireNonNull(privateKeyLocation));
+  /**
+   * Creates a new key provider using the provided key generation method.
+   * @param generator The method with which to generate the keys.
+   */
+  public JWTPublicPrivateKeyProvider(KeyPairGenerator generator) {
+    KeyPair keyPair = generator.generateKeyPair();
+    publicKey = keyPair.getPublic();
+    privateKey = keyPair.getPrivate();
   }
 
   @Override
-  public String getPublicKey() {
+  public PublicKey getPublicKey() {
     return publicKey;
   }
 
   @Override
-  public String getPrivateKey() {
+  public PrivateKey getPrivateKey() {
     return privateKey;
   }
 }

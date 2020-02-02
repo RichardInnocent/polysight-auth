@@ -5,8 +5,8 @@ import org.junit.Test;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -14,7 +14,7 @@ import static org.mockito.Mockito.*;
 public class UserCreationServiceTest {
 
   private final PolysightUserDAO userDao = mock(PolysightUserDAO.class);
-  private final BCryptPasswordEncoder passwordEncoder = mock(BCryptPasswordEncoder.class);
+  private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
   private final StringKeyGenerator saltGenerator = mock(StringKeyGenerator.class);
   private final UserCreationService userCreationService =
       new UserCreationService(passwordEncoder, saltGenerator, userDao);

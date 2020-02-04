@@ -1,5 +1,7 @@
 package org.richardinnocent.models.user;
 
+import static org.richardinnocent.models.user.PolysightUserConstraints.*;
+
 import javax.validation.constraints.Size;
 import org.joda.time.LocalDate;
 
@@ -11,11 +13,25 @@ import java.util.Objects;
  */
 public class RawPolysightUser {
 
-  @NotNull(message = "Name must be specified")
-  private String fullName;
+  @NotNull(message = "First name must be specified")
+  @Size(min = 1,
+        max = FIRST_NAME_MAX_LENGTH,
+        message = "A valid first name must be between 1 and " + FIRST_NAME_MAX_LENGTH
+            + " characters (inclusive)")
+  private String firstName;
+
+  @NotNull(message = "Surname must be specified")
+  @Size(min = 1,
+        max = LAST_NAME_MAX_LENGTH,
+        message = "A valid surname must be between 1 and " + LAST_NAME_MAX_LENGTH
+            + " characters (inclusive)")
+  private String lastName;
 
   @NotNull(message = "Email must be specified")
-  @Size(min=3, message = "A valid email address must be at least 3 characters")
+  @Size(min = 3,
+        max = EMAIL_MAX_LENGTH,
+        message = "A valid email address must be between 3 characters and " + EMAIL_MAX_LENGTH
+            + " characters (inclusive)")
   private String email;
 
   @NotNull(message = "Date of birth must be specified")
@@ -26,19 +42,35 @@ public class RawPolysightUser {
   private CharSequence password;
 
   /**
-   * Gets the full name of the user.
-   * @return The full name of the user.
+   * Gets the first name of the user.
+   * @return The first name of the user.
    */
-  public String getFullName() {
-    return fullName;
+  public String getFirstName() {
+    return firstName;
   }
 
   /**
-   * Sets the full name of the user.
-   * @param fullName The full name of the user.
+   * Sets the first name of the user.
+   * @param firstName The first name of the user.
    */
-  public void setFullName(String fullName) {
-    this.fullName = fullName;
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  /**
+   * Gets the last name of the user.
+   * @return The last name of the user.
+   */
+  public String getLastName() {
+    return lastName;
+  }
+
+  /**
+   * Sets the last name of the user.
+   * @param lastName The last name of the user.
+   */
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
   }
 
   /**
@@ -101,7 +133,8 @@ public class RawPolysightUser {
 
   private boolean equalsUser(RawPolysightUser other) {
     return Objects.equals(email, other.email) &&
-        Objects.equals(fullName, other.fullName) &&
+        Objects.equals(firstName, other.firstName) &&
+        Objects.equals(lastName, other.lastName) &&
         Objects.equals(dateOfBirth, other.dateOfBirth) &&
         Objects.equals(password, other.password);
   }

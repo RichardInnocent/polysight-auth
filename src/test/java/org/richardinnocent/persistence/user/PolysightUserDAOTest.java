@@ -10,6 +10,9 @@ import org.richardinnocent.persistence.exception.ReadException;
 import javax.persistence.EntityManager;
 
 import java.util.Optional;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -17,8 +20,8 @@ import static org.mockito.Mockito.*;
 public class PolysightUserDAOTest {
 
   private final EntityManager entityManager = mock(EntityManager.class);
-  private final PolysightUserDAO dao =
-      new PolysightUserDAO(mock(PolysightUserRepository.class));
+  private final PolysightUserRepository userRepo = mock(PolysightUserRepository.class);
+  private final PolysightUserDAO dao = new PolysightUserDAO(userRepo);
 
   @Before
   public void configureEntityManager() {
@@ -44,6 +47,39 @@ public class PolysightUserDAOTest {
   public void testGetWhenExceptionIsThrown() {
     when(entityManager.find(eq(PolysightUser.class), anyLong())).thenThrow(new RuntimeException());
     dao.findById(123L);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testFindByEmail() {
+    String email = "test@polysight.com";
+    PolysightUser returnedUser = mock(PolysightUser.class);
+    when(userRepo.findOne(any(Specification.class))).thenReturn(Optional.of(returnedUser));
+    Optional<PolysightUser> result = dao.findByEmail(email);
+    assertFalse(result.isEmpty());
+    assertSame(returnedUser, result.get());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testLoadByUsernameWhenAccountFound() {
+    PolysightUser user = mock(PolysightUser.class);
+    when(user.getEmail()).thenReturn("test@polysight.com");
+    when(user.getPassword()).thenReturn("password01");
+
+    when(userRepo.findOne(any(Specification.class))).thenReturn(Optional.of(user));
+
+    UserDetails userDetails = dao.loadUserByUsername(user.getEmail());
+    assertEquals(user.getEmail(), userDetails.getUsername());
+    assertEquals(user.getPassword(), userDetails.getPassword());
+    assertTrue(userDetails.getAuthorities().isEmpty());
+  }
+
+  @Test(expected = UsernameNotFoundException.class)
+  @SuppressWarnings("unchecked")
+  public void testLoadByUsernameWhenAccountNotFoundThrowsException() {
+    when(userRepo.findOne(any(Specification.class))).thenReturn(Optional.empty());
+    dao.loadUserByUsername("An unassociated email address");
   }
 
   @Test

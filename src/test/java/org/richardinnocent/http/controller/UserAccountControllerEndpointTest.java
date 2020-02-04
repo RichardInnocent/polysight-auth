@@ -1,15 +1,11 @@
 package org.richardinnocent.http.controller;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.richardinnocent.http.mapper.HttpObjectMapper;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.services.user.creation.UserCreationService;
@@ -18,26 +14,20 @@ import org.richardinnocent.services.user.find.UserSearchService;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.UriUtils;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @SuppressWarnings("unused")
-public class UserAccountControllerTest {
-
-  private static final ObjectMapper MAPPER = new HttpObjectMapper();
-
-  private MockMvc mvc;
+public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
 
   @MockBean
   private UserSearchService searchService;
@@ -48,22 +38,14 @@ public class UserAccountControllerTest {
   @MockBean
   private UserDeletionService deletionService;
 
-  @BeforeClass
-  public static void setUpMapper() {
-    MAPPER.setSerializationInclusion(Include.NON_NULL);
+  public Object getController() {
+    return new UserAccountController(searchService, creationService, deletionService);
   }
 
-  @Before
-  public void setUpHttpMapper() {
-    UserAccountController controller =
-        new UserAccountController(searchService, creationService, deletionService);
-
-    MappingJackson2HttpMessageConverter messageConverter =
-        new MappingJackson2HttpMessageConverter();
-    messageConverter.setObjectMapper(MAPPER);
-    mvc = MockMvcBuilders.standaloneSetup(controller)
-                         .setMessageConverters(messageConverter)
-                         .build();
+  @Test
+  public void testGetSignupPage() throws Exception {
+    mvc.perform(get("/signup"))
+       .andExpect(status().isOk());
   }
 
   @Test
@@ -75,7 +57,8 @@ public class UserAccountControllerTest {
     when(creationService.createUser(rawUser)).thenReturn(user);
 
     postToPath(account, "/signup", MediaType.APPLICATION_FORM_URLENCODED)
-        .andExpect(status().isOk());
+        .andExpect(status().is3xxRedirection())
+        .andExpect(header().string("Location", "/login"));
     verify(creationService, times(1)).createUser(eq(rawUser));
   }
 
@@ -96,9 +79,57 @@ public class UserAccountControllerTest {
   }
 
   @Test
-  public void testCreateAccountWithNoNameIsBadRequest() throws Exception {
+  public void testCreateAccountWithEmailLongerThan128CharsIsBadRequest() throws Exception {
+    RawPolysightUser user = createFullyPopulatedRawUser();
+    user.setEmail(createStringOfLength(129));
+    postToPath(toFormData(user), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithNoFirstNameIsBadRequest() throws Exception {
     RawPolysightUser rawUser = createFullyPopulatedRawUser();
-    rawUser.setFullName(null);
+    rawUser.setFirstName(null);
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithEmptyFirstNameIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setFirstName("");
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithFirstNameLongerThan32CharsIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setFirstName(createStringOfLength(33));
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithNoLastNameIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setLastName(null);
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithEmptyLastNameIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setLastName("");
+    postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testCreateAccountWithLastNameLongerThan32CharsIsBadRequest() throws Exception {
+    RawPolysightUser rawUser = createFullyPopulatedRawUser();
+    rawUser.setLastName(createStringOfLength(33));
     postToPath(toFormData(rawUser), "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().isBadRequest());
   }
@@ -127,11 +158,17 @@ public class UserAccountControllerTest {
         .andExpect(status().isBadRequest());
   }
 
+  @Test
+  public void testGetProfilePage() throws Exception {
+    mvc.perform(get("/profile"))
+       .andExpect(status().isOk());
+  }
+
   private PolysightUser createFullyPopulatedPolysightUser(long id) {
     PolysightUser user = new PolysightUser();
     user.setId(id);
-    user.setEmail(UserAccountControllerTest.class.getSimpleName() + "@polysighttest.com");
-    user.setFullName(UserAccountControllerTest.class.getSimpleName());
+    user.setEmail(UserAccountControllerEndpointTest.class.getSimpleName() + "@polysighttest.com");
+    user.setFirstName(UserAccountControllerEndpointTest.class.getSimpleName());
     user.setCreationTime(DateTime.now());
     user.setDateOfBirth(new LocalDate(2019, 10, 17));
     user.setPassword("password");
@@ -142,10 +179,19 @@ public class UserAccountControllerTest {
   private RawPolysightUser createFullyPopulatedRawUser() {
     RawPolysightUser rawUser = new RawPolysightUser();
     rawUser.setEmail("test@polysight.org");
-    rawUser.setFullName("Test Polysight User");
+    rawUser.setFirstName("Forename");
+    rawUser.setLastName("Surname");
     rawUser.setDateOfBirth(new LocalDate("1990-04-03"));
     rawUser.setPassword("password01");
     return rawUser;
+  }
+
+  private String createStringOfLength(int length) {
+    return IntStream.range(0, length)
+                    .mapToObj(i -> (char) (i + 'a'))
+                    .reduce("",
+                            (text, character) -> text + character,
+                            (text1, text2) -> text1 + text2);
   }
 
   @SuppressWarnings("unchecked")

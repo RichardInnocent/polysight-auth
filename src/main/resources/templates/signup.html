@@ -9,8 +9,10 @@
 <form action="#" th:action="@{/signup}" th:object="${user}" method="post">
   <label for="email">Email</label>
   <input type="text" id="email" name="email" autofocus="autofocus" th:field="*{email}" />
-  <label for="fullName">Full name</label>
-  <input type="text" id="fullName" name="Full name" th:field="*{fullName}" />
+  <label for="firstName">First name</label>
+  <input type="text" id="firstName" name="Full name" th:field="*{firstName}" />
+  <label for="lastName">Last name</label>
+  <input type="text" id="lastName" name="Last name" th:field="*{lastName}" />
   <lable for="dob">Date of birth</lable>
   <input type="date" id="dob" name="Date of birth" th:field="*{dateOfBirth}" />
   <label for="password">Password</label>:

@@ -17,6 +17,9 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.Optional;
 
+/**
+ * DAO for the application's users.
+ */
 @Transactional
 @Repository
 public class PolysightUserDAO implements UserDetailsService {
@@ -49,6 +52,11 @@ public class PolysightUserDAO implements UserDetailsService {
     }
   }
 
+  /**
+   * Attempts to find the user with the specified email address.
+   * @param email The email of the user.
+   * @return The found user, or an empty optional if no user exists with that email address.
+   */
   public Optional<PolysightUser> findByEmail(String email) {
     return userRepo.findOne(hasEmail(email));
   }

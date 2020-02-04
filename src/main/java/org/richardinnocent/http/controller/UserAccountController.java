@@ -7,12 +7,12 @@ import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.services.user.creation.UserCreationService;
 import org.richardinnocent.services.user.deletion.UserDeletionService;
 import org.richardinnocent.services.user.find.UserSearchService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 
 @Controller
@@ -40,18 +40,14 @@ public class UserAccountController {
 
   @PostMapping(value = "signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   @SuppressWarnings("unused")
-  public String signUp(@Valid @ModelAttribute RawPolysightUser rawPolysightUser) {
+  public RedirectView signUp(@Valid @ModelAttribute RawPolysightUser rawPolysightUser) {
     creationService.createUser(rawPolysightUser);
-    return "login";
+    return new RedirectView("/login");
   }
 
   @GetMapping("profile")
   public String profile(Model model) {
     return "profile";
-  }
-
-  @ResponseStatus(code = HttpStatus.NOT_IMPLEMENTED)
-  private static class NotImplementedException extends RuntimeException {
   }
 
   @InitBinder

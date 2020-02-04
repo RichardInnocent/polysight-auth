@@ -12,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 @EnableWebSecurity
+@SuppressWarnings("unused")
 public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
 
   private final PolysightUserDAO userDAO;

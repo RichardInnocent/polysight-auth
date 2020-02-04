@@ -2,6 +2,7 @@ package org.richardinnocent.services.user.creation;
 
 import org.joda.time.LocalDate;
 import org.junit.Test;
+import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
@@ -22,7 +23,8 @@ public class UserCreationServiceTest {
   @Test
   public void testCreateUser() {
     RawPolysightUser rawUser = new RawPolysightUser();
-    rawUser.setFullName("Test name");
+    rawUser.setFirstName("First name");
+    rawUser.setLastName("Last name");
     rawUser.setEmail("test@polysight.org");
     rawUser.setDateOfBirth(new LocalDate("2000-07-13"));
     rawUser.setPassword("some password");
@@ -37,12 +39,14 @@ public class UserCreationServiceTest {
     verify(passwordEncoder, times(1)).encode(rawUser.getPassword() + salt);
     verify(userDao, times(1)).save(savedUser);
 
-    assertEquals(rawUser.getFullName(), savedUser.getFullName());
+    assertEquals(rawUser.getFirstName(), savedUser.getFirstName());
+    assertEquals(rawUser.getLastName(), savedUser.getLastName());
     assertEquals(rawUser.getEmail(), savedUser.getEmail());
     assertEquals(rawUser.getDateOfBirth(), savedUser.getDateOfBirth());
     assertEquals(encryptedPassword, savedUser.getPassword());
     assertEquals(salt, savedUser.getPasswordSalt());
     assertTrue(savedUser.getCreationTime().isBeforeNow());
+    assertEquals(AccountStatus.ACTIVE, savedUser.getAccountStatus());
   }
 
 }

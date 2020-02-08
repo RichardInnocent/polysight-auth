@@ -78,7 +78,7 @@ public class SecurityConfiguration {
       throws IllegalArgumentException, IOException, NoSuchAlgorithmException {
     KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
     if ((secretLocation == null || secretLocation.isEmpty())) {
-      if (!profilesProvider.isProfileActive(Profile.DEVELOPMENT)) {
+      if (!profilesProvider.isAnyProfileActive(Profile.DEVELOPMENT, Profile.UNIT_TEST)) {
         throw new IllegalArgumentException(
             "The JWT secret location is undefined or is null. This would cause a key pair to be "
                 + "created without a secret which is unacceptable on this configuration as this "

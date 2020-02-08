@@ -8,12 +8,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
+import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.services.user.creation.UserCreationService;
 import org.richardinnocent.services.user.deletion.UserDeletionService;
 import org.richardinnocent.services.user.find.UserSearchService;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -26,6 +32,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@ActiveProfiles("UNIT_TEST")
+@EnableAutoConfiguration(exclude = {
+    DataSourceAutoConfiguration.class,
+    DataSourceTransactionManagerAutoConfiguration.class,
+    HibernateJpaAutoConfiguration.class
+})
 @SuppressWarnings("unused")
 public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
 
@@ -37,6 +49,9 @@ public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
 
   @MockBean
   private UserDeletionService deletionService;
+
+  @MockBean
+  private PolysightUserDAO userDao;
 
   public Object getController() {
     return new UserAccountController(searchService, creationService, deletionService);

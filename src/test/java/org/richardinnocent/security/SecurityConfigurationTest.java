@@ -40,7 +40,7 @@ public class SecurityConfigurationTest {
   public void testKeyPairGeneratorWithNullSecretLocationThenGeneratorIsStillCreatedOnDevelopmentProfile()
       throws IOException, NoSuchAlgorithmException {
     ProfilesProvider profilesProvider = mock(ProfilesProvider.class);
-    when(profilesProvider.isProfileActive(Profile.DEVELOPMENT)).thenReturn(true);
+    configureSecretlessProfiling(profilesProvider, true);
     KeyPairGenerator generator =
         config.keyPairGenerator(null, mock(FileContentReader.class), profilesProvider);
     assertNotNull(generator);
@@ -50,7 +50,7 @@ public class SecurityConfigurationTest {
   public void testKeyPairGeneratorWithEmptySecretLocationThenGeneratorIsStillCreatedOnDevelopmentProfile()
       throws IOException, NoSuchAlgorithmException {
     ProfilesProvider profilesProvider = mock(ProfilesProvider.class);
-    when(profilesProvider.isProfileActive(Profile.DEVELOPMENT)).thenReturn(true);
+    configureSecretlessProfiling(profilesProvider, true);
     KeyPairGenerator generator =
         config.keyPairGenerator("", mock(FileContentReader.class), profilesProvider);
     assertNotNull(generator);
@@ -60,7 +60,7 @@ public class SecurityConfigurationTest {
   public void testKeyPairGeneratorWithNullSecretLocationThenGeneratorIsNotCreatedWhenNotOnDevelopmentProfile()
       throws IOException, NoSuchAlgorithmException {
     ProfilesProvider profilesProvider = mock(ProfilesProvider.class);
-    when(profilesProvider.isProfileActive(Profile.DEVELOPMENT)).thenReturn(false);
+    configureSecretlessProfiling(profilesProvider, false);
     config.keyPairGenerator(null, mock(FileContentReader.class), profilesProvider);
   }
 
@@ -68,7 +68,7 @@ public class SecurityConfigurationTest {
   public void testKeyPairGeneratorWithEmptySecretLocationThenGeneratorIsNotCreatedWhenNotOnDevelopmentProfile()
       throws IOException, NoSuchAlgorithmException {
     ProfilesProvider profilesProvider = mock(ProfilesProvider.class);
-    when(profilesProvider.isProfileActive(Profile.DEVELOPMENT)).thenReturn(false);
+    configureSecretlessProfiling(profilesProvider, false);
     config.keyPairGenerator("", mock(FileContentReader.class), profilesProvider);
   }
 
@@ -88,6 +88,11 @@ public class SecurityConfigurationTest {
     String realPath = "A real path";
     when(reader.getByteContentsFromFileAtLocation(realPath)).thenReturn(new byte[] {(byte) 4});
     assertNotNull(config.keyPairGenerator(realPath, reader, mock(ProfilesProvider.class)));
+  }
+
+  private void configureSecretlessProfiling(ProfilesProvider profilesProvider, boolean enabled) {
+    when(profilesProvider.isAnyProfileActive(Profile.DEVELOPMENT, Profile.UNIT_TEST))
+        .thenReturn(enabled);
   }
 
 }

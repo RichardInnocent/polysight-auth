@@ -6,6 +6,7 @@ import java.util.Optional;
  * The different Spring profiles that are recognised throughout the application.
  */
 public enum Profile {
+  UNIT_TEST,
   DEVELOPMENT,
   QA,
   PRODUCTION;

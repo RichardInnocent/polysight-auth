@@ -9,7 +9,7 @@ public class ProfileTest {
 
   @Test
   public void testCorrectNumberOfProfiles() {
-    assertEquals(3, Profile.values().length);
+    assertEquals(4, Profile.values().length);
   }
 
   @Test

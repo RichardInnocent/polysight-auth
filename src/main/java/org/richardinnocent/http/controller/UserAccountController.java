@@ -46,6 +46,7 @@ public class UserAccountController {
   }
 
   @GetMapping("profile")
+  @SuppressWarnings("unused")
   public String profile(Model model) {
     return "profile";
   }

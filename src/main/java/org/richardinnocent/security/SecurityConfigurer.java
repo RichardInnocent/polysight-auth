@@ -1,5 +1,6 @@
 package org.richardinnocent.security;
 
+import org.richardinnocent.Qualifiers;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +20,10 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
   private final PublicPrivateKeyProvider publicPrivateKeyProvider;
   private final AuthenticationProvider authenticationProvider;
 
-  public SecurityConfigurer(PolysightUserDAO userDAO,
-                            @Qualifier("jwt") PublicPrivateKeyProvider publicPrivateKeyProvider,
-                            AuthenticationProvider authenticationProvider) {
+  public SecurityConfigurer(
+      PolysightUserDAO userDAO,
+      @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider publicPrivateKeyProvider,
+      AuthenticationProvider authenticationProvider) {
     this.userDAO = userDAO;
     this.publicPrivateKeyProvider = publicPrivateKeyProvider;
     this.authenticationProvider = authenticationProvider;
@@ -32,7 +34,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
     http.sessionManagement().disable();
 
     http.authorizeRequests()
-        .antMatchers("/login", "/signup")
+        .antMatchers("/login", "/signup", "/favicon.ico")
         .permitAll()
         .anyRequest()
         .authenticated()
@@ -40,7 +42,11 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
         .addFilter(
             new JWTAuthenticationFilter(
                 authenticationManager(), publicPrivateKeyProvider, userDAO))
-        .addFilter(new JWTAuthorizationFilter(authenticationManager(), publicPrivateKeyProvider))
+        .addFilter(
+            new JWTAuthorizationFilter(
+                authenticationManager(),
+                publicPrivateKeyProvider,
+                new SecurityContextAuthenticationFacade()))
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
         .formLogin()

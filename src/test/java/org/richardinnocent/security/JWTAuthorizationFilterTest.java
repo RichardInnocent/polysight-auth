@@ -21,20 +21,19 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 
 public class JWTAuthorizationFilterTest {
 
   private static PublicPrivateKeyProvider keyProvider;
 
   private final AuthenticationManager authManager = mock(AuthenticationManager.class);
-  private final SecurityContext securityContext = mock(SecurityContext.class);
+  private final AuthenticationFacade authenticationFacade = mock(AuthenticationFacade.class);
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final HttpServletResponse response = mock(HttpServletResponse.class);
   private final FilterChain chain = mock(FilterChain.class);
 
   private final JWTAuthorizationFilter filter =
-      new JWTAuthorizationFilter(authManager, keyProvider, securityContext);
+      new JWTAuthorizationFilter(authManager, keyProvider, authenticationFacade);
 
   @BeforeClass
   public static void setUpKeyProvider() throws NoSuchAlgorithmException {
@@ -45,7 +44,7 @@ public class JWTAuthorizationFilterTest {
   public void checkAuthenticationNotSetIfCookiesAreNull() throws IOException, ServletException {
     when(request.getCookies()).thenReturn(null);
     filter.doFilterInternal(request, response, chain);
-    verify(securityContext, never()).setAuthentication(any());
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
@@ -53,7 +52,7 @@ public class JWTAuthorizationFilterTest {
   public void checkAuthenticationNotSetIfThereAreNoCookies() throws IOException, ServletException {
     when(request.getCookies()).thenReturn(new Cookie[]{});
     filter.doFilterInternal(request, response, chain);
-    verify(securityContext, never()).setAuthentication(any());
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
@@ -69,23 +68,23 @@ public class JWTAuthorizationFilterTest {
 
     when(request.getCookies()).thenReturn(new Cookie[]{cookie1, cookie2, cookie3});
     filter.doFilterInternal(request, response, chain);
-    verify(securityContext, never()).setAuthentication(any());
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
   @Test
-  public void testEmptyTokenCookieSetsContextToNull() throws IOException, ServletException {
+  public void testEmptyTokenCookieDoesNotSetContext() throws IOException, ServletException {
     Cookie cookie = mock(Cookie.class);
     when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
 
     when(request.getCookies()).thenReturn(new Cookie[]{cookie});
     filter.doFilterInternal(request, response, chain);
-    verify(securityContext, times(1)).setAuthentication(null);
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
   @Test
-  public void testInvalidJwtCookieThenNullIsAppliedToTheSecurityContext()
+  public void testInvalidJwtCookieDoesNotSetContext()
       throws IOException, ServletException {
     Cookie cookie = mock(Cookie.class);
     when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
@@ -94,7 +93,7 @@ public class JWTAuthorizationFilterTest {
 
     filter.doFilterInternal(request, response, chain);
 
-    verify(securityContext, times(1)).setAuthentication(null);
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
@@ -119,7 +118,7 @@ public class JWTAuthorizationFilterTest {
 
     filter.doFilterInternal(request, response, chain);
 
-    verify(securityContext, times(1))
+    verify(authenticationFacade, times(1))
         .setAuthentication(authenticationCaptor.capture());
 
     assertEquals(email, authenticationCaptor.getValue().getPrincipal());
@@ -143,7 +142,7 @@ public class JWTAuthorizationFilterTest {
 
     filter.doFilterInternal(request, response, chain);
 
-    verify(securityContext, times(1)).setAuthentication(null);
+    verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 

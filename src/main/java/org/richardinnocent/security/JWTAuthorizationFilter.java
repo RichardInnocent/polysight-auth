@@ -15,13 +15,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.richardinnocent.Qualifiers;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 /**
@@ -31,36 +26,32 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
   private final PublicPrivateKeyProvider keyProvider;
-  private final SecurityContext securityContext;
-
-  @Autowired
-  public JWTAuthorizationFilter(AuthenticationManager authManager,
-                                @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider keyProvider) {
-    this(authManager, keyProvider, SecurityContextHolder.getContext());
-  }
+  private final AuthenticationFacade authenticationFacade;
 
   JWTAuthorizationFilter(AuthenticationManager authManager,
                          PublicPrivateKeyProvider keyProvider,
-                         SecurityContext securityContext) {
+                         AuthenticationFacade authenticationFacade) {
     super(authManager);
     this.keyProvider = keyProvider;
-    this.securityContext = securityContext;
+    this.authenticationFacade = authenticationFacade;
   }
 
   @Override
   protected void doFilterInternal(HttpServletRequest req,
                                   HttpServletResponse res,
                                   FilterChain chain) throws IOException, ServletException {
-    Cookie[] cookies = req.getCookies();
-
-    if (cookies != null) {
-      Stream.of(cookies)
-            .filter(cookie -> JWTCookieFields.COOKIE_NAME.equals(cookie.getName()))
-            .findAny()
-            .ifPresent(cookie -> securityContext.setAuthentication(getAuthentication(cookie)));
-    }
-
+    getAuthentication(req.getCookies()).ifPresent(authenticationFacade::setAuthentication);
     chain.doFilter(req, res);
+  }
+
+  private Optional<UsernamePasswordAuthenticationToken> getAuthentication(Cookie[] cookies) {
+    if (cookies == null) {
+      return Optional.empty();
+    }
+    return Stream.of(cookies)
+                 .filter(cookie -> JWTCookieFields.COOKIE_NAME.equals(cookie.getName()))
+                 .findAny()
+                 .map(this::getAuthentication);
   }
 
   private UsernamePasswordAuthenticationToken getAuthentication(Cookie jwtCookie) {
@@ -75,9 +66,6 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
   }
 
   private DecodedJWT decodeJwt(String token) {
-    if (token == null) {
-      return null;
-    }
     try {
       return
           JWT.require(

@@ -40,7 +40,14 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
   protected void doFilterInternal(HttpServletRequest req,
                                   HttpServletResponse res,
                                   FilterChain chain) throws IOException, ServletException {
-    getAuthentication(req.getCookies()).ifPresent(authenticationFacade::setAuthentication);
+    Optional<UsernamePasswordAuthenticationToken> authToken = getAuthentication(req.getCookies());
+    if (authToken.isPresent()) {
+      authenticationFacade.setAuthentication(authToken.get());
+      if (req.getRequestURI().startsWith(req.getContextPath() + "/login")) {
+        res.sendRedirect("/profile");
+        return;
+      }
+    }
     chain.doFilter(req, res);
   }
 

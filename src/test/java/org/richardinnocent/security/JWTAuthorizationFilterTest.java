@@ -112,6 +112,8 @@ public class JWTAuthorizationFilterTest {
     when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
     when(cookie.getValue()).thenReturn(token);
     when(request.getCookies()).thenReturn(new Cookie[]{cookie});
+    when(request.getContextPath()).thenReturn("contextPath");
+    when(request.getRequestURI()).thenReturn("contextPath/profile");
 
     ArgumentCaptor<Authentication> authenticationCaptor =
         ArgumentCaptor.forClass(Authentication.class);
@@ -123,6 +125,38 @@ public class JWTAuthorizationFilterTest {
 
     assertEquals(email, authenticationCaptor.getValue().getPrincipal());
     verifyChainContinued();
+  }
+
+  @Test
+  public void testValidCookieIsAppliedToSecurityContextButIsRedirectedIfAccessingLoginPage()
+    throws IOException, ServletException {
+    String email = "test@polysight.com";
+    String token =
+        JWT.create()
+           .withIssuer(JWTCookieFields.ISSUER)
+           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, email)
+           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
+           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
+                                    (ECPrivateKey) keyProvider.getPrivateKey()));
+
+    Cookie cookie = mock(Cookie.class);
+    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
+    when(cookie.getValue()).thenReturn(token);
+    when(request.getContextPath()).thenReturn("contextPath");
+    when(request.getRequestURI()).thenReturn("contextPath/login?hasParameters");
+    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
+
+    ArgumentCaptor<Authentication> authenticationCaptor =
+        ArgumentCaptor.forClass(Authentication.class);
+
+    filter.doFilterInternal(request, response, chain);
+
+    verify(authenticationFacade, times(1))
+        .setAuthentication(authenticationCaptor.capture());
+
+    assertEquals(email, authenticationCaptor.getValue().getPrincipal());
+    verify(response, times(1)).sendRedirect("/profile");
+    verifyChainNotContinued();
   }
 
   @Test
@@ -148,6 +182,10 @@ public class JWTAuthorizationFilterTest {
 
   private void verifyChainContinued() throws IOException, ServletException {
     verify(chain, times(1)).doFilter(request, response);
+  }
+
+  private void verifyChainNotContinued() throws IOException, ServletException {
+    verify(chain, never()).doFilter(request, response);
   }
 
 

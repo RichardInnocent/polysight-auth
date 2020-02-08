@@ -1,5 +1,3 @@
 steps:
   - name: 'gcr.io/cloud-builders/mvn'
-    args: ['test-compile']
-  - name: 'gcr.io/cloud-builders/mvn'
-    args: ['test']
+    args: ['test-compile,test']

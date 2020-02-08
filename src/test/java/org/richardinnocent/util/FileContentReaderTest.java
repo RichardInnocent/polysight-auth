@@ -13,7 +13,7 @@ public class FileContentReaderTest {
   @Test
   public void testReadingTextFromClasspathFile() throws IOException {
     String filePath = "test.txt";
-    String fileContents = "These are the contents\r\nof this test file";
+    String fileContents = "These are the contents\nof this test file";
     String detectedContents = READER.getTextContentsFromClassPathFile(filePath);
     assertEquals(fileContents, detectedContents);
   }
@@ -32,7 +32,7 @@ public class FileContentReaderTest {
   public void testReadingBytesFromClasspathFile() throws IOException {
     String filePath = "test.txt";
     byte[] detectedContents = READER.getByteContentsFromClassPathFile(filePath);
-    byte[] fileContents = "These are the contents\r\nof this test file".getBytes();
+    byte[] fileContents = "These are the contents\nof this test file".getBytes();
     assertArrayEquals(fileContents, detectedContents);
   }
 

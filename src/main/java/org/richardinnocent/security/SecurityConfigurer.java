@@ -34,7 +34,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
     http.sessionManagement().disable();
 
     http.authorizeRequests()
-        .antMatchers("/login", "/signup", "/favicon.ico")
+        .antMatchers("/login", "/signup", "/favicon.ico", "/error")
         .permitAll()
         .anyRequest()
         .authenticated()
@@ -51,7 +51,11 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
         .and()
         .formLogin()
         .loginPage("/login")
-        .successForwardUrl("/profile");
+        .defaultSuccessUrl("/profile")
+        .and()
+        .logout()
+        .deleteCookies(JWTCookieFields.COOKIE_NAME)
+        .logoutSuccessUrl("/login");
   }
 
   @Override

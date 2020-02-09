@@ -14,6 +14,7 @@ import java.security.interfaces.ECPublicKey;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
+import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -134,7 +135,8 @@ public class JWTAuthenticationFilterTest {
     HttpServletResponse response = mock(HttpServletResponse.class);
     ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
 
-    authenticationFilter.successfulAuthentication(null, response, null, authentication);
+    authenticationFilter.successfulAuthentication(
+        mock(HttpServletRequest.class), response, mock(FilterChain.class), authentication);
     verify(response).addCookie(cookieCaptor.capture());
 
     Cookie cookie = cookieCaptor.getValue();

@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 @EnableWebSecurity
@@ -31,14 +30,8 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.sessionManagement().disable();
-
-    http.authorizeRequests()
-        .antMatchers("/login", "/signup", "/favicon.ico")
-        .permitAll()
-        .anyRequest()
-        .authenticated()
-        .and()
+    http.csrf().disable();
+    http.sessionManagement().disable()
         .addFilter(
             new JWTAuthenticationFilter(
                 authenticationManager(), publicPrivateKeyProvider, userDAO))
@@ -47,11 +40,11 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
                 authenticationManager(),
                 publicPrivateKeyProvider,
                 new SecurityContextAuthenticationFacade()))
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        .and()
-        .formLogin()
-        .loginPage("/login")
-        .successForwardUrl("/profile");
+        .formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/profile").and()
+        .logout().deleteCookies(JWTCookieFields.COOKIE_NAME).logoutSuccessUrl("/login").and()
+        .authorizeRequests()
+        .antMatchers("/signup", "/favicon.ico", "/error").permitAll()
+        .anyRequest().authenticated();
   }
 
   @Override

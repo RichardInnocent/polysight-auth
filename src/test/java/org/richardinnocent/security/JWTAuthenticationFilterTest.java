@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import java.io.IOException;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
@@ -13,6 +14,7 @@ import java.security.interfaces.ECPublicKey;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
+import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -122,7 +124,7 @@ public class JWTAuthenticationFilterTest {
   }
 
   @Test
-  public void testJWTIsCreatedOnSuccess() {
+  public void testJWTIsCreatedOnSuccess() throws IOException, ServletException {
     String email = "valid.user@polysight.com";
     Authentication authentication = mock(Authentication.class);
     User principal = mock(User.class);

@@ -2,15 +2,18 @@ package org.richardinnocent.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import java.io.IOException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.rowset.serial.SerialException;
 import org.richardinnocent.http.controller.MissingParametersException;
 import org.richardinnocent.http.controller.MissingParametersException.Creator;
 import org.richardinnocent.models.user.PolysightUser;
@@ -69,7 +72,10 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   protected void successfulAuthentication(HttpServletRequest request,
                                           HttpServletResponse response,
                                           FilterChain chain,
-                                          Authentication auth) {
+                                          Authentication auth)
+      throws IOException, ServletException {
+    super.successfulAuthentication(request, response, chain, auth);
+
     String token =
         JWT.create()
            .withIssuer(JWTCookieFields.ISSUER)

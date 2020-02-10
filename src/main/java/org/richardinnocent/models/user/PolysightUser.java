@@ -10,6 +10,9 @@ import javax.persistence.*;
 
 import static org.richardinnocent.models.user.PolysightUserConstraints.*;
 
+/**
+ * Represents an application user.
+ */
 @Entity
 @Table(
     name = "users",

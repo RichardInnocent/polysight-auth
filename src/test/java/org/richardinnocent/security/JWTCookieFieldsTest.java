@@ -12,6 +12,7 @@ public class JWTCookieFieldsTest {
     assertEquals("polysight-token", COOKIE_NAME);
     assertEquals("polysight", ISSUER);
     assertEquals("email", EMAIL_CLAIM_KEY);
+    assertEquals("authorities", AUTHORITIES_CLAIM_KEY);
   }
 
 }

@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
+import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
 import org.richardinnocent.services.user.creation.UserCreationService;
 import org.richardinnocent.services.user.deletion.UserDeletionService;
 import org.richardinnocent.services.user.find.UserSearchService;
@@ -52,6 +53,9 @@ public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
 
   @MockBean
   private PolysightUserDAO userDao;
+
+  @MockBean
+  private UserRoleAssignmentDAO userRoleAssignmentDAO;
 
   public Object getController() {
     return new UserAccountController(searchService, creationService, deletionService);

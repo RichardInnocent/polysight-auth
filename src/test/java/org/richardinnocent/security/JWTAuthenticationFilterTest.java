@@ -11,6 +11,8 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
@@ -29,6 +31,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 public class JWTAuthenticationFilterTest {
@@ -129,7 +132,9 @@ public class JWTAuthenticationFilterTest {
     String email = "valid.user@polysight.com";
     Authentication authentication = mock(Authentication.class);
     User principal = mock(User.class);
+    Collection<GrantedAuthority> authorities = Arrays.asList(()->"authority1", ()->"authority2");
     when(principal.getUsername()).thenReturn(email);
+    when(principal.getAuthorities()).thenReturn(authorities);
     when(authentication.getPrincipal()).thenReturn(principal);
 
     HttpServletResponse response = mock(HttpServletResponse.class);
@@ -151,6 +156,43 @@ public class JWTAuthenticationFilterTest {
                         .verify(cookie.getValue());
 
     assertEquals(email, jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString());
+    assertEquals("[\"authority1\",\"authority2\"]",
+                 jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
+    Date expirationDate = jwt.getExpiresAt();
+    assertTrue(expirationDate.after(new Date()));
+  }
+
+  @Test
+  public void testJWTIsCreatedOnSuccessWithNullAuthoritiesHasEmptyAuthorityClaim()
+      throws IOException, ServletException {
+    String email = "valid.user@polysight.com";
+    Authentication authentication = mock(Authentication.class);
+    User principal = mock(User.class);
+    when(principal.getUsername()).thenReturn(email);
+    when(principal.getAuthorities()).thenReturn(null);
+    when(authentication.getPrincipal()).thenReturn(principal);
+
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
+
+    authenticationFilter.successfulAuthentication(
+        mock(HttpServletRequest.class), response, mock(FilterChain.class), authentication);
+    verify(response).addCookie(cookieCaptor.capture());
+
+    Cookie cookie = cookieCaptor.getValue();
+    assertNotNull(cookie);
+    assertTrue(cookie.isHttpOnly());
+    assertEquals(864_000, cookie.getMaxAge());
+    assertEquals(JWTCookieFields.COOKIE_NAME, cookie.getName());
+
+    DecodedJWT jwt = JWT.require(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
+                                                    (ECPrivateKey) keyProvider.getPrivateKey()))
+                        .build()
+                        .verify(cookie.getValue());
+
+    assertEquals(email, jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString());
+    assertEquals("[]",
+                 jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
     Date expirationDate = jwt.getExpiresAt();
     assertTrue(expirationDate.after(new Date()));
   }

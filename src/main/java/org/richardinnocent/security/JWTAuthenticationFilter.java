@@ -2,12 +2,16 @@ package org.richardinnocent.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -20,6 +24,7 @@ import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +41,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   private static final long EXPIRATION_TIME_MILLIS = 864_000_000L;
   private static final String EMAIL_KEY = "email";
   private static final String PASSWORD_KEY = "password";
+  private static final ObjectMapper JWT_MAPPER = new ObjectMapper();
 
   private final AuthenticationManager authenticationManager;
   private final PublicPrivateKeyProvider keyProvider;
@@ -76,10 +82,13 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
       throws IOException, ServletException {
     super.successfulAuthentication(request, response, chain, auth);
 
+    User user = (User) auth.getPrincipal();
+
     String token =
         JWT.create()
            .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, ((User) auth.getPrincipal()).getUsername())
+           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, user.getUsername())
+           .withClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY, buildAuthoritiesClaimValue(user))
            .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME_MILLIS))
            .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
                                     (ECPrivateKey) keyProvider.getPrivateKey()));
@@ -88,6 +97,24 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     jwtCookie.setHttpOnly(true);
     jwtCookie.setMaxAge((int) (EXPIRATION_TIME_MILLIS / 1000L));
     response.addCookie(jwtCookie);
+  }
+
+  private String buildAuthoritiesClaimValue(User user) {
+    return buildAuthoritiesClaimValue(user.getAuthorities());
+  }
+
+  private String buildAuthoritiesClaimValue(Collection<GrantedAuthority> authorities) {
+    if (authorities == null) {
+      return "[]";
+    }
+    try {
+      return JWT_MAPPER.writeValueAsString(
+          authorities.stream()
+                     .map(GrantedAuthority::getAuthority)
+                     .collect(Collectors.toList()));
+    } catch (JsonProcessingException e) {
+      return "[]";
+    }
   }
 
 }

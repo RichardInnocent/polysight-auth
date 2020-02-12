@@ -1,14 +1,8 @@
 package org.richardinnocent.persistence.user;
 
 import org.richardinnocent.models.user.PolysightUser;
-import org.richardinnocent.models.user.UserRole;
 import org.richardinnocent.persistence.EntityDAO;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;

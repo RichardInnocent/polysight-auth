@@ -21,16 +21,13 @@ import java.util.Optional;
  */
 @Transactional
 @Repository
-public class PolysightUserDAO extends EntityDAO<PolysightUser> implements UserDetailsService {
+public class PolysightUserDAO extends EntityDAO<PolysightUser> {
 
   private final PolysightUserRepository userRepo;
-  private final UserRoleAssignmentDAO userRoleAssignmentDAO;
 
-  public PolysightUserDAO(PolysightUserRepository userRepo,
-                          UserRoleAssignmentDAO userRoleAssignmentDAO) {
+  public PolysightUserDAO(PolysightUserRepository userRepo) {
     super(PolysightUser.class);
     this.userRepo = userRepo;
-    this.userRoleAssignmentDAO = userRoleAssignmentDAO;
   }
 
   /**
@@ -40,25 +37,6 @@ public class PolysightUserDAO extends EntityDAO<PolysightUser> implements UserDe
    */
   public Optional<PolysightUser> findByEmail(String email) {
     return userRepo.findOne(hasEmail(email));
-  }
-
-  @Override
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    Optional<PolysightUser> userOptional = findByEmail(email);
-    if (userOptional.isPresent()) {
-      PolysightUser user = userOptional.get();
-      List<GrantedAuthority> authorities = getAuthoritiesForUser(user);
-      return new User(user.getEmail(), user.getPassword(), authorities);
-    } else {
-      throw new UsernameNotFoundException("User with email " + email + " not found");
-    }
-  }
-
-  private List<GrantedAuthority> getAuthoritiesForUser(PolysightUser user) {
-    return userRoleAssignmentDAO.findAllRolesForUser(user)
-                                .stream()
-                                .map(UserRole::getAuthority)
-                                .collect(Collectors.toList());
   }
 
   private static Specification<PolysightUser> hasEmail(String email) {

@@ -17,13 +17,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.rowset.serial.SerialException;
 import org.richardinnocent.http.controller.MissingParametersException;
 import org.richardinnocent.http.controller.MissingParametersException.Creator;
+import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
-import org.richardinnocent.persistence.user.PolysightUserDAO;
+import org.richardinnocent.services.user.find.UserSearchService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,14 +46,14 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
   private final AuthenticationManager authenticationManager;
   private final PublicPrivateKeyProvider keyProvider;
-  private final PolysightUserDAO userDAO;
+  private final UserSearchService userSearchService;
 
   public JWTAuthenticationFilter(AuthenticationManager authenticationManager,
                                  @Qualifier("jwt") PublicPrivateKeyProvider keyProvider,
-                                 PolysightUserDAO userDAO) {
+                                 UserSearchService userSearchService) {
     this.authenticationManager = authenticationManager;
     this.keyProvider = keyProvider;
-    this.userDAO = userDAO;
+    this.userSearchService = userSearchService;
   }
 
   @Override
@@ -65,13 +66,19 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     String password = missingParamsCreator.getOrLogMissing(PASSWORD_KEY, request::getParameter);
     missingParamsCreator.throwIfAnyMissing();
 
-    Optional<PolysightUser> user = userDAO.findByEmail(email);
-    if (user.isEmpty()) {
+    Optional<PolysightUser> userOptional = userSearchService.findByEmail(email);
+    if (userOptional.isEmpty()) {
       throw new BadCredentialsException("Bad credentials");
     }
+    PolysightUser user = userOptional.get();
+
+    if (user.getAccountStatus() != AccountStatus.ACTIVE) {
+      throw new DisabledException("Your account has been disabled");
+    }
+
     return authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
-            email, password + user.get().getPasswordSalt(), Collections.emptyList()));
+            email, password + user.getPasswordSalt(), Collections.emptyList()));
   }
 
   @Override

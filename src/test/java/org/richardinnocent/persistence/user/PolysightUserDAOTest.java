@@ -42,34 +42,4 @@ public class PolysightUserDAOTest {
     assertSame(returnedUser, result.get());
   }
 
-  @Test
-  @SuppressWarnings("unchecked")
-  public void testLoadByUsernameWhenAccountFound() {
-    PolysightUser user = mock(PolysightUser.class);
-    when(user.getEmail()).thenReturn("test@polysight.com");
-    when(user.getPassword()).thenReturn("password01");
-
-    List<UserRole> roles = Arrays.asList(UserRole.USER, UserRole.POLYSIGHT_ADMIN);
-    when(userRoleAssignmentDAO.findAllRolesForUser(user)).thenReturn(roles);
-    when(userRepo.findOne(any(Specification.class))).thenReturn(Optional.of(user));
-
-    UserDetails userDetails = dao.loadUserByUsername(user.getEmail());
-    assertEquals(user.getEmail(), userDetails.getUsername());
-    assertEquals(user.getPassword(), userDetails.getPassword());
-    assertEquals(roles.stream()
-                      .map(UserRole::name)
-                      .collect(Collectors.toSet()),
-                 userDetails.getAuthorities()
-                            .stream()
-                            .map(GrantedAuthority::getAuthority)
-                            .collect(Collectors.toSet()));
-  }
-
-  @Test(expected = UsernameNotFoundException.class)
-  @SuppressWarnings("unchecked")
-  public void testLoadByUsernameWhenAccountNotFoundThrowsException() {
-    when(userRepo.findOne(any(Specification.class))).thenReturn(Optional.empty());
-    dao.loadUserByUsername("An unassociated email address");
-  }
-
 }

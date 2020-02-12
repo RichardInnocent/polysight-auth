@@ -20,7 +20,8 @@ import javax.persistence.UniqueConstraint;
 @Table(
     name = "user_role_assignment",
     uniqueConstraints = {
-        @UniqueConstraint(name = "app_user_email", columnNames = "email")
+        @UniqueConstraint(name = "unique_user_role_pair",
+                          columnNames = {"assignment_id", "user_id"})
     }
 )
 @SuppressWarnings("unused")

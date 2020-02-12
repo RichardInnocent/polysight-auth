@@ -3,19 +3,19 @@ package org.richardinnocent.persistence.user;
 import java.util.List;
 import javax.transaction.Transactional;
 import org.richardinnocent.models.user.PolysightUser;
-import org.richardinnocent.models.user.UserRole;
+import org.richardinnocent.models.user.UserRoleAssignment;
 import org.richardinnocent.persistence.EntityDAO;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Transactional
 @Repository
-public class UserRoleAssignmentDAO extends EntityDAO<UserRole> {
+public class UserRoleAssignmentDAO extends EntityDAO<UserRoleAssignment> {
 
-  private final UserRoleRepository userRoleRepo;
+  private final UserRoleAssignmentRepository userRoleRepo;
 
-  public UserRoleAssignmentDAO(UserRoleRepository userRoleRepo) {
-    super(UserRole.class);
+  public UserRoleAssignmentDAO(UserRoleAssignmentRepository userRoleRepo) {
+    super(UserRoleAssignment.class);
     this.userRoleRepo = userRoleRepo;
   }
 
@@ -24,7 +24,7 @@ public class UserRoleAssignmentDAO extends EntityDAO<UserRole> {
    * @param user The user whose roles should be searched for.
    * @return All roles for the user.
    */
-  public List<UserRole> findAllRolesForUser(PolysightUser user) {
+  public List<UserRoleAssignment> findAllRolesForUser(PolysightUser user) {
     return findAllRolesForUserWithId(user.getId());
   }
 
@@ -33,12 +33,12 @@ public class UserRoleAssignmentDAO extends EntityDAO<UserRole> {
    * @param userId The ID of the user whose roles should be searched for.
    * @return All roles for the user.
    */
-  public List<UserRole> findAllRolesForUserWithId(long userId) {
+  public List<UserRoleAssignment> findAllRolesForUserWithId(long userId) {
     return userRoleRepo.findAll(hasUserId(userId));
   }
 
-  private Specification<UserRole> hasUserId(long userId) {
-    return (role, cq, cb) -> cb.equal(role.get("user_id"), userId);
+  private Specification<UserRoleAssignment> hasUserId(long userId) {
+    return (role, cq, cb) -> cb.equal(role.get("userId"), userId);
   }
 
 }

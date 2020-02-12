@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.UserRole;
+import org.richardinnocent.models.user.UserRoleAssignment;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 
 import java.util.Optional;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -49,7 +49,12 @@ public class UserSearchServiceTest {
     when(user.getEmail()).thenReturn(email);
     when(user.getPassword()).thenReturn("password01");
 
-    List<UserRole> roles = Arrays.asList(UserRole.USER, UserRole.POLYSIGHT_ADMIN);
+    UserRoleAssignment role1 = new UserRoleAssignment();
+    role1.setUserRole(UserRole.USER);
+    UserRoleAssignment role2 = new UserRoleAssignment();
+    role2.setUserRole(UserRole.POLYSIGHT_ADMIN);
+
+    List<UserRoleAssignment> roles = Arrays.asList(role1, role2);
     when(userDao.findByEmail(email)).thenReturn(Optional.of(user));
     when(userRoleAssignmentDAO.findAllRolesForUser(user)).thenReturn(roles);
 
@@ -57,6 +62,7 @@ public class UserSearchServiceTest {
     assertEquals(user.getEmail(), userDetails.getUsername());
     assertEquals(user.getPassword(), userDetails.getPassword());
     assertEquals(roles.stream()
+                      .map(UserRoleAssignment::getUserRole)
                       .map(UserRole::name)
                       .collect(Collectors.toSet()),
                  userDetails.getAuthorities()

@@ -15,7 +15,7 @@ import static org.richardinnocent.models.user.PolysightUserConstraints.*;
  */
 @Entity
 @Table(
-    name = "users",
+    name = "user",
     uniqueConstraints = {
         @UniqueConstraint(name = "app_user_email", columnNames = "email")
     }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.UserRole;
+import org.richardinnocent.models.user.UserRoleAssignment;
 import org.richardinnocent.persistence.exception.ReadException;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
@@ -63,6 +64,7 @@ public class UserSearchService implements UserDetailsService {
   private List<GrantedAuthority> getAuthoritiesForUser(PolysightUser user) {
     return userRoleAssignmentDAO.findAllRolesForUser(user)
                                 .stream()
+                                .map(UserRoleAssignment::getUserRole)
                                 .map(UserRole::getAuthority)
                                 .collect(Collectors.toList());
   }

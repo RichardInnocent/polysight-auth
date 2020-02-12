@@ -10,8 +10,8 @@ import java.security.NoSuchAlgorithmException;
 import org.junit.Test;
 import org.richardinnocent.Profile;
 import org.richardinnocent.ProfilesProvider;
-import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.util.FileContentReader;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 public class SecurityConfigurationTest {
 
@@ -33,7 +33,7 @@ public class SecurityConfigurationTest {
 
   @Test
   public void testAuthenticationProvider() {
-    assertNotNull(config.authenticationProvider(mock(PolysightUserDAO.class)));
+    assertNotNull(config.authenticationProvider(mock(UserDetailsService.class)));
   }
 
   @Test

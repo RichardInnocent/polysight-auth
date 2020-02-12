@@ -4,19 +4,26 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 /**
@@ -24,6 +31,9 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
  * the user will be set as the authenticated principal.
  */
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(JWTAuthorizationFilter.class);
+  private static final ObjectMapper JWT_MAPPER = new ObjectMapper();
 
   private final PublicPrivateKeyProvider keyProvider;
   private final AuthenticationFacade authenticationFacade;
@@ -86,13 +96,35 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
   }
 
   private UsernamePasswordAuthenticationToken getAuthentication(DecodedJWT jwt) {
-    if (jwt != null) {
-      String email = jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString();
-      if (email != null) {
-        return new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
-      }
+    if (jwt == null) {
+      return null;
+    }
+    String email = jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString();
+    if (email != null) {
+      List<GrantedAuthority> authorities =
+          getAuthorities(jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
+      return new UsernamePasswordAuthenticationToken(email, null, authorities);
     }
     return null;
+  }
+
+  private List<GrantedAuthority> getAuthorities(String rawAuthorities) {
+    return getAuthoritiesAsStrings(rawAuthorities).stream()
+                                                  .map(text -> (GrantedAuthority) () -> text)
+                                                  .collect(Collectors.toList());
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<String> getAuthoritiesAsStrings(String rawAuthorities) {
+    if (rawAuthorities == null) {
+      return Collections.emptyList();
+    }
+    try {
+      return JWT_MAPPER.readValue(rawAuthorities, List.class);
+    } catch (JsonProcessingException e) {
+      LOGGER.warn("Could not parse authorities", e);
+      return Collections.emptyList();
+    }
   }
 
 }

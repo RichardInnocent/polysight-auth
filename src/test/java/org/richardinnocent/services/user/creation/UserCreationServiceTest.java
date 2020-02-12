@@ -2,10 +2,14 @@ package org.richardinnocent.services.user.creation;
 
 import org.joda.time.LocalDate;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
+import org.richardinnocent.models.user.UserRole;
+import org.richardinnocent.models.user.UserRoleAssignment;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
+import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -15,10 +19,11 @@ import static org.mockito.Mockito.*;
 public class UserCreationServiceTest {
 
   private final PolysightUserDAO userDao = mock(PolysightUserDAO.class);
+  private final UserRoleAssignmentDAO roleAssignmentDAO = mock(UserRoleAssignmentDAO.class);
   private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
   private final StringKeyGenerator saltGenerator = mock(StringKeyGenerator.class);
   private final UserCreationService userCreationService =
-      new UserCreationService(passwordEncoder, saltGenerator, userDao);
+      new UserCreationService(passwordEncoder, saltGenerator, userDao, roleAssignmentDAO);
 
   @Test
   public void testCreateUser() {
@@ -47,6 +52,14 @@ public class UserCreationServiceTest {
     assertEquals(salt, savedUser.getPasswordSalt());
     assertTrue(savedUser.getCreationTime().isBeforeNow());
     assertEquals(AccountStatus.ACTIVE, savedUser.getAccountStatus());
+
+    ArgumentCaptor<UserRoleAssignment> roleAssignmentCaptor =
+        ArgumentCaptor.forClass(UserRoleAssignment.class);
+    verify(roleAssignmentDAO).save(roleAssignmentCaptor.capture());
+
+    UserRoleAssignment assignedRole = roleAssignmentCaptor.getValue();
+    assertEquals(savedUser.getId(), assignedRole.getUserId());
+    assertEquals(UserRole.USER, assignedRole.getUserRole());
   }
 
 }

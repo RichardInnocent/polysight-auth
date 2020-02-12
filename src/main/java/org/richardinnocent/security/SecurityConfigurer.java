@@ -1,7 +1,7 @@
 package org.richardinnocent.security;
 
 import org.richardinnocent.Qualifiers;
-import org.richardinnocent.persistence.user.PolysightUserDAO;
+import org.richardinnocent.services.user.find.UserSearchService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -15,15 +15,15 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @SuppressWarnings("unused")
 public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
 
-  private final PolysightUserDAO userDAO;
+  private final UserSearchService userSearchService;
   private final PublicPrivateKeyProvider publicPrivateKeyProvider;
   private final AuthenticationProvider authenticationProvider;
 
   public SecurityConfigurer(
-      PolysightUserDAO userDAO,
+      UserSearchService userSearchService,
       @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider publicPrivateKeyProvider,
       AuthenticationProvider authenticationProvider) {
-    this.userDAO = userDAO;
+    this.userSearchService = userSearchService;
     this.publicPrivateKeyProvider = publicPrivateKeyProvider;
     this.authenticationProvider = authenticationProvider;
   }
@@ -34,7 +34,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
     http.sessionManagement().disable()
         .addFilter(
             new JWTAuthenticationFilter(
-                authenticationManager(), publicPrivateKeyProvider, userDAO))
+                authenticationManager(), publicPrivateKeyProvider, userSearchService))
         .addFilter(
             new JWTAuthorizationFilter(
                 authenticationManager(),

@@ -20,4 +20,9 @@ public class JWTCookieFields {
    */
   public static final String EMAIL_CLAIM_KEY = "email";
 
+  /**
+   * The name of the claim that contains the user's roles.
+   */
+  public static final String AUTHORITIES_CLAIM_KEY = "authorities";
+
 }

@@ -7,13 +7,13 @@ import java.security.SecureRandom;
 import org.richardinnocent.Profile;
 import org.richardinnocent.ProfilesProvider;
 import org.richardinnocent.PropertiesKey;
-import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.util.FileContentReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
@@ -45,14 +45,14 @@ public class SecurityConfiguration {
 
   /**
    * Gets the provider that authenticates users.
-   * @param userDAO The user DAO object that retrieves user objects from a store.
+   * @param userService The user service object that reads and builds authentication information.
    * @return The provider that authenticates users.
    */
   @Bean
-  public AuthenticationProvider authenticationProvider(PolysightUserDAO userDAO) {
+  public AuthenticationProvider authenticationProvider(UserDetailsService userService) {
     DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
     authenticationProvider.setPasswordEncoder(passwordEncoder());
-    authenticationProvider.setUserDetailsService(userDAO);
+    authenticationProvider.setUserDetailsService(userService);
     return authenticationProvider;
   }
 

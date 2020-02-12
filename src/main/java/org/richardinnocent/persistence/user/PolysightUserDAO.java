@@ -1,7 +1,5 @@
 package org.richardinnocent.persistence.user;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.UserRole;
 import org.richardinnocent.persistence.EntityDAO;

@@ -17,6 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.richardinnocent.Qualifiers;
 import org.richardinnocent.http.controller.MissingParametersException;
 import org.richardinnocent.http.controller.MissingParametersException.Creator;
 import org.richardinnocent.models.user.AccountStatus;
@@ -49,7 +50,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   private final UserSearchService userSearchService;
 
   public JWTAuthenticationFilter(AuthenticationManager authenticationManager,
-                                 @Qualifier("jwt") PublicPrivateKeyProvider keyProvider,
+                                 @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider keyProvider,
                                  UserSearchService userSearchService) {
     this.authenticationManager = authenticationManager;
     this.keyProvider = keyProvider;

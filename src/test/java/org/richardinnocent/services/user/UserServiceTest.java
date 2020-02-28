@@ -16,7 +16,7 @@ import org.richardinnocent.persistence.user.PolysightUserDAO;
 
 import java.util.Optional;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
-import org.richardinnocent.services.user.UserService;
+import org.richardinnocent.services.user.creation.UserAlreadyExistsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -100,6 +100,8 @@ public class UserServiceTest {
     rawUser.setDateOfBirth(new LocalDate("2000-07-13"));
     rawUser.setPassword("some password");
 
+    when(service.findByEmail(rawUser.getEmail())).thenReturn(Optional.empty());
+
     String salt = "generated salt";
     String encryptedPassword = "encrypted password";
     when(saltGenerator.generateKey()).thenReturn(salt);
@@ -126,6 +128,15 @@ public class UserServiceTest {
     UserRoleAssignment assignedRole = roleAssignmentCaptor.getValue();
     assertEquals(savedUser.getId(), assignedRole.getUserId());
     assertEquals(UserRole.USER, assignedRole.getUserRole());
+  }
+
+  @Test(expected = UserAlreadyExistsException.class)
+  public void testCreateUserThrowsExceptionIfUserAlreadyExists() {
+    String email = "alreadyregister@polysight.com";
+    when(service.findByEmail(email)).thenReturn(Optional.of(mock(PolysightUser.class)));
+    RawPolysightUser user = new RawPolysightUser();
+    user.setEmail(email);
+    service.createUser(user);
   }
 
   @Test

@@ -106,7 +106,6 @@ public class UserService implements UserDetailsService {
     user.setPasswordSalt(saltGenerator.generateKey());
     user.setPassword(passwordEncoder.encode(rawUser.getPassword() + user.getPasswordSalt()));
     user.setAccountStatus(AccountStatus.ACTIVE);
-
     userDao.save(user);
 
     UserRoleAssignment roleAssignment = new UserRoleAssignment();

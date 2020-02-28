@@ -1,10 +1,17 @@
-package org.richardinnocent.services.user.find;
+package org.richardinnocent.services.user;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.transaction.Transactional;
+import org.joda.time.DateTime;
+import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
+import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.models.user.UserRole;
 import org.richardinnocent.models.user.UserRoleAssignment;
+import org.richardinnocent.persistence.exception.DeletionException;
+import org.richardinnocent.persistence.exception.InsertionException;
+import org.richardinnocent.persistence.exception.NotFoundException;
 import org.richardinnocent.persistence.exception.ReadException;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
@@ -13,20 +20,28 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.keygen.StringKeyGenerator;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-public class UserSearchService implements UserDetailsService {
+public class UserService implements UserDetailsService {
 
   private final PolysightUserDAO userDao;
   private final UserRoleAssignmentDAO userRoleAssignmentDAO;
+  private final PasswordEncoder passwordEncoder;
+  private final StringKeyGenerator saltGenerator;
 
-  public UserSearchService(PolysightUserDAO userDao,
-                           UserRoleAssignmentDAO userRoleAssignmentDAO) {
+  public UserService(PolysightUserDAO userDao,
+                     UserRoleAssignmentDAO userRoleAssignmentDAO,
+                     PasswordEncoder passwordEncoder,
+                     StringKeyGenerator saltGenerator) {
     this.userDao = userDao;
     this.userRoleAssignmentDAO = userRoleAssignmentDAO;
+    this.passwordEncoder = passwordEncoder;
+    this.saltGenerator = saltGenerator;
   }
 
   /**
@@ -67,6 +82,45 @@ public class UserSearchService implements UserDetailsService {
                                 .map(UserRoleAssignment::getUserRole)
                                 .map(UserRole::getAuthority)
                                 .collect(Collectors.toList());
+  }
+
+  /**
+   * Creates a new user from the raw entity type.
+   * @param rawUser The raw user entity, straight from the create account page.
+   * @return The created user.
+   * @throws InsertionException Thrown if there is a problem persisting the user.s
+   */
+  @Transactional
+  public PolysightUser createUser(RawPolysightUser rawUser) throws InsertionException {
+    PolysightUser user = new PolysightUser();
+    user.setFirstName(rawUser.getFirstName());
+    user.setLastName(rawUser.getLastName());
+    user.setEmail(rawUser.getEmail());
+    user.setDateOfBirth(rawUser.getDateOfBirth());
+    user.setCreationTime(DateTime.now());
+    user.setPasswordSalt(saltGenerator.generateKey());
+    user.setPassword(passwordEncoder.encode(rawUser.getPassword() + user.getPasswordSalt()));
+    user.setAccountStatus(AccountStatus.ACTIVE);
+
+    userDao.save(user);
+
+    UserRoleAssignment roleAssignment = new UserRoleAssignment();
+    roleAssignment.setUserRole(UserRole.USER);
+    roleAssignment.setUserId(user.getId());
+    userRoleAssignmentDAO.save(roleAssignment);
+    return user;
+  }
+
+  public PolysightUser deleteUser(long id) throws NotFoundException, DeletionException {
+    Optional<PolysightUser> response = userDao.findById(id);
+    PolysightUser user =
+        response.orElseThrow(() -> NotFoundException.forEntityTypeWithId(PolysightUser.class, id));
+    deleteUser(user);
+    return user;
+  }
+
+  public void deleteUser(PolysightUser user) throws DeletionException {
+    userDao.delete(user);
   }
 
 }

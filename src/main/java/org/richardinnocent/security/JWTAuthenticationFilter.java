@@ -22,7 +22,7 @@ import org.richardinnocent.http.controller.MissingParametersException;
 import org.richardinnocent.http.controller.MissingParametersException.Creator;
 import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
-import org.richardinnocent.services.user.find.UserSearchService;
+import org.richardinnocent.services.user.UserService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -47,14 +47,14 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
   private final AuthenticationManager authenticationManager;
   private final PublicPrivateKeyProvider keyProvider;
-  private final UserSearchService userSearchService;
+  private final UserService userService;
 
   public JWTAuthenticationFilter(AuthenticationManager authenticationManager,
                                  @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider keyProvider,
-                                 UserSearchService userSearchService) {
+                                 UserService userService) {
     this.authenticationManager = authenticationManager;
     this.keyProvider = keyProvider;
-    this.userSearchService = userSearchService;
+    this.userService = userService;
   }
 
   @Override
@@ -67,7 +67,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     String password = missingParamsCreator.getOrLogMissing(PASSWORD_KEY, request::getParameter);
     missingParamsCreator.throwIfAnyMissing();
 
-    Optional<PolysightUser> userOptional = userSearchService.findByEmail(email);
+    Optional<PolysightUser> userOptional = userService.findByEmail(email);
     if (userOptional.isEmpty()) {
       throw new BadCredentialsException("Bad credentials");
     }

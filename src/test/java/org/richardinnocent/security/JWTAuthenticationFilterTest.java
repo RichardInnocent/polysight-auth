@@ -27,7 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.richardinnocent.http.controller.MissingParametersException;
 import org.richardinnocent.models.user.AccountStatus;
 import org.richardinnocent.models.user.PolysightUser;
-import org.richardinnocent.services.user.find.UserSearchService;
+import org.richardinnocent.services.user.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -44,10 +44,10 @@ public class JWTAuthenticationFilterTest {
   private static PublicPrivateKeyProvider keyProvider;
 
   private final AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-  private final UserSearchService userSearchService = mock(UserSearchService.class);
+  private final UserService userService = mock(UserService.class);
 
   private final JWTAuthenticationFilter authenticationFilter =
-      new JWTAuthenticationFilter(authenticationManager, keyProvider, userSearchService);
+      new JWTAuthenticationFilter(authenticationManager, keyProvider, userService);
 
   @BeforeClass
   public static void setUpKeyProvider() throws NoSuchAlgorithmException {
@@ -67,7 +67,7 @@ public class JWTAuthenticationFilterTest {
     when(user.getPasswordSalt()).thenReturn(salt);
     when(user.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
 
-    when(userSearchService.findByEmail(eq(email))).thenReturn(Optional.of(user));
+    when(userService.findByEmail(eq(email))).thenReturn(Optional.of(user));
 
     Authentication returnedAuthentication = mock(Authentication.class);
 
@@ -119,7 +119,7 @@ public class JWTAuthenticationFilterTest {
   public void testAttemptValidationWithUnfoundUserThrowsBadCredentialsException() {
     String email = "nonexistent@polysight.com";
     HttpServletRequest request = createRequestWithCredentials(email, "password");
-    when(userSearchService.findByEmail(eq(email))).thenReturn(Optional.empty());
+    when(userService.findByEmail(eq(email))).thenReturn(Optional.empty());
     authenticationFilter.attemptAuthentication(request, null);
   }
 
@@ -129,7 +129,7 @@ public class JWTAuthenticationFilterTest {
     HttpServletRequest request = createRequestWithCredentials(email, "password");
     PolysightUser user = mock(PolysightUser.class);
     when(user.getAccountStatus()).thenReturn(AccountStatus.DISABLED);
-    when(userSearchService.findByEmail(eq(email))).thenReturn(Optional.of(user));
+    when(userService.findByEmail(eq(email))).thenReturn(Optional.of(user));
     authenticationFilter.attemptAuthentication(request, null);
   }
 

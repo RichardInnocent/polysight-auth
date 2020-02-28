@@ -10,9 +10,7 @@ import org.richardinnocent.models.user.PolysightUser;
 import org.richardinnocent.models.user.RawPolysightUser;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
-import org.richardinnocent.services.user.creation.UserCreationService;
-import org.richardinnocent.services.user.deletion.UserDeletionService;
-import org.richardinnocent.services.user.find.UserSearchService;
+import org.richardinnocent.services.user.UserService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
@@ -43,13 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
 
   @MockBean
-  private UserSearchService searchService;
-
-  @MockBean
-  private UserCreationService creationService;
-
-  @MockBean
-  private UserDeletionService deletionService;
+  private UserService userService;
 
   @MockBean
   private PolysightUserDAO userDao;
@@ -58,7 +50,7 @@ public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
   private UserRoleAssignmentDAO userRoleAssignmentDAO;
 
   public Object getController() {
-    return new UserAccountController(searchService, creationService, deletionService);
+    return new UserAccountController(userService);
   }
 
   @Test
@@ -73,12 +65,12 @@ public class UserAccountControllerEndpointTest extends ControllerEndpointTest {
     String account = toFormData(rawUser);
 
     PolysightUser user = createFullyPopulatedPolysightUser(123L);
-    when(creationService.createUser(rawUser)).thenReturn(user);
+    when(userService.createUser(rawUser)).thenReturn(user);
 
     postToPath(account, "/signup", MediaType.APPLICATION_FORM_URLENCODED)
         .andExpect(status().is3xxRedirection())
         .andExpect(header().string("Location", "/login"));
-    verify(creationService, times(1)).createUser(eq(rawUser));
+    verify(userService, times(1)).createUser(eq(rawUser));
   }
 
   @Test

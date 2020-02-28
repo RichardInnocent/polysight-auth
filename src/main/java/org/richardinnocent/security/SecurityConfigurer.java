@@ -1,7 +1,7 @@
 package org.richardinnocent.security;
 
 import org.richardinnocent.Qualifiers;
-import org.richardinnocent.services.user.find.UserSearchService;
+import org.richardinnocent.services.user.UserService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -15,15 +15,15 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @SuppressWarnings("unused")
 public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
 
-  private final UserSearchService userSearchService;
+  private final UserService userService;
   private final PublicPrivateKeyProvider publicPrivateKeyProvider;
   private final AuthenticationProvider authenticationProvider;
 
   public SecurityConfigurer(
-      UserSearchService userSearchService,
+      UserService userService,
       @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider publicPrivateKeyProvider,
       AuthenticationProvider authenticationProvider) {
-    this.userSearchService = userSearchService;
+    this.userService = userService;
     this.publicPrivateKeyProvider = publicPrivateKeyProvider;
     this.authenticationProvider = authenticationProvider;
   }
@@ -34,7 +34,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
     http.sessionManagement().disable()
         .addFilter(
             new JWTAuthenticationFilter(
-                authenticationManager(), publicPrivateKeyProvider, userSearchService))
+                authenticationManager(), publicPrivateKeyProvider, userService))
         .addFilter(
             new JWTAuthorizationFilter(
                 authenticationManager(),

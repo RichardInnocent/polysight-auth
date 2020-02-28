@@ -15,6 +15,7 @@ import org.richardinnocent.persistence.exception.NotFoundException;
 import org.richardinnocent.persistence.exception.ReadException;
 import org.richardinnocent.persistence.user.PolysightUserDAO;
 import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
+import org.richardinnocent.services.user.creation.UserAlreadyExistsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -92,6 +93,10 @@ public class UserService implements UserDetailsService {
    */
   @Transactional
   public PolysightUser createUser(RawPolysightUser rawUser) throws InsertionException {
+    if (findByEmail(rawUser.getEmail()).isPresent()) {
+      throw UserAlreadyExistsException.forEmail(rawUser.getEmail());
+    }
+
     PolysightUser user = new PolysightUser();
     user.setFirstName(rawUser.getFirstName());
     user.setLastName(rawUser.getLastName());

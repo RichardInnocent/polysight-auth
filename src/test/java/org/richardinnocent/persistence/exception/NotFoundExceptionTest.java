@@ -10,7 +10,7 @@ public class NotFoundExceptionTest {
 
   @Test
   public void testForEntityTypeWithId() {
-    Class entityType = NotFoundExceptionTest.class;
+    Class<NotFoundExceptionTest> entityType = NotFoundExceptionTest.class;
     long id = 123L;
     NotFoundException exception = NotFoundException.forEntityTypeWithId(entityType, id);
     assertEquals(

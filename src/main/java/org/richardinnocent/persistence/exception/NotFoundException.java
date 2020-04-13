@@ -20,7 +20,7 @@ public class NotFoundException extends PersistenceException {
    * @param id The ID of the entity.
    * @return An appropriate exception.
    */
-  public static NotFoundException forEntityTypeWithId(Class entityType, long id) {
+  public static NotFoundException forEntityTypeWithId(Class<?> entityType, long id) {
     return new NotFoundException(
         "Could not find an entity of type " + entityType.getSimpleName() + " with ID " + id);
   }

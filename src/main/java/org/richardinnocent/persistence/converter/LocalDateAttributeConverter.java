@@ -15,9 +15,7 @@ public class LocalDateAttributeConverter implements AttributeConverter<LocalDate
   }
 
   private String constructDateString(LocalDate localDate) {
-    return localDate.getYear() + "-"
-        + localDate.getMonthOfYear() + "-"
-        + localDate.getDayOfMonth();
+    return localDate.getYear() + "-" + localDate.getMonthOfYear() + '-' + localDate.getDayOfMonth();
   }
 
   @Override

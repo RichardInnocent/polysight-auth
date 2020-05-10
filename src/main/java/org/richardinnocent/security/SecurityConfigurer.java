@@ -43,7 +43,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
         .formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/profile").and()
         .logout().deleteCookies(JWTCookieFields.COOKIE_NAME).logoutSuccessUrl("/login").and()
         .authorizeRequests()
-        .antMatchers("/signup", "/favicon.ico", "/error").permitAll()
+        .antMatchers("/signup", "/favicon.ico", "/error", "/api/v1/security/publickey").permitAll()
         .anyRequest().authenticated();
   }
 

@@ -25,4 +25,6 @@ public class JWTCookieFields {
    */
   public static final String AUTHORITIES_CLAIM_KEY = "authorities";
 
+  private JWTCookieFields() {}
+
 }

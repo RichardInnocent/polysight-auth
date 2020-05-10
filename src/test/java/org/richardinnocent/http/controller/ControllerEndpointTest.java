@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.richardinnocent.http.mapper.HttpObjectMapper;
+import org.richardinnocent.persistence.user.PolysightUserDAO;
+import org.richardinnocent.persistence.user.UserRoleAssignmentDAO;
+import org.richardinnocent.services.user.UserService;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -15,6 +19,17 @@ public abstract class ControllerEndpointTest {
   protected static final ObjectMapper MAPPER = new HttpObjectMapper();
 
   protected MockMvc mvc;
+
+  @MockBean
+  protected UserService userService;
+
+  @MockBean
+  @SuppressWarnings("unused")
+  protected PolysightUserDAO userDao;
+
+  @MockBean
+  @SuppressWarnings("unused")
+  protected UserRoleAssignmentDAO userRoleAssignmentDAO;
 
   @BeforeClass
   public static void setUpMapper() {

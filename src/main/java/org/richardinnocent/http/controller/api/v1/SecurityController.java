@@ -31,14 +31,15 @@ public class SecurityController {
     return new PublicKeyResponse(keyProvider.getPublicKey());
   }
 
+  @SuppressWarnings("unused") // Accessed via ObjectMapper
   private static class PublicKeyResponse {
     private final String algorithm;
     private final String format;
-    private final String key;
+    private final byte[] key;
 
     private PublicKeyResponse(PublicKey publicKey) {
       this.algorithm = publicKey.getAlgorithm();
-      this.key = new String(publicKey.getEncoded());
+      this.key = publicKey.getEncoded();
       this.format = publicKey.getFormat();
     }
 
@@ -50,7 +51,7 @@ public class SecurityController {
       return format;
     }
 
-    public String getKey() {
+    public byte[] getKey() {
       return key;
     }
   }

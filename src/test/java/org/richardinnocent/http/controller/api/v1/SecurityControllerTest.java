@@ -2,7 +2,10 @@ package org.richardinnocent.http.controller.api.v1;
 
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.richardinnocent.http.controller.ControllerEndpointTest;
@@ -41,16 +44,16 @@ public class SecurityControllerTest extends ControllerEndpointTest {
     when(publicKey.getEncoded()).thenReturn(key.getBytes());
     when(keyProvider.getPublicKey()).thenReturn(publicKey);
 
+    Map<String, Object> expectedContent = new HashMap<>(3);
+    expectedContent.put("algorithm", algorithm);
+    expectedContent.put("format", format);
+    expectedContent.put("key", key.getBytes());
+    String expectedContentJson = new ObjectMapper().writeValueAsString(expectedContent);
+
     mvc.perform(get("/api/v1/security/publickey"))
        .andExpect(status().isOk())
        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-       .andExpect(
-           content().json(
-               "{\"algorithm\": \"" + algorithm
-                   + "\",\"format\": \"" + format
-                   + "\", \"key\": \"" + key + "\"}"
-           )
-       );
+       .andExpect(content().json(expectedContentJson));
   }
 
   @Override

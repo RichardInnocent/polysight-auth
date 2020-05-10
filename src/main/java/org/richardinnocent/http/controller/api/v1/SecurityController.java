@@ -1,7 +1,6 @@
 package org.richardinnocent.http.controller.api.v1;
 
 import java.security.PublicKey;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.richardinnocent.security.PublicPrivateKeyProvider;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +31,7 @@ public class SecurityController {
     return new PublicKeyResponse(keyProvider.getPublicKey());
   }
 
+  @SuppressWarnings("unused") // Accessed via ObjectMapper
   private static class PublicKeyResponse {
     private final String algorithm;
     private final String format;

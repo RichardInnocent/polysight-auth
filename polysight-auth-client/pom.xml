@@ -6,7 +6,7 @@
 
   <artifactId>polysight-auth-client</artifactId>
   <groupId>org.richardinnocent.polysight</groupId>
-  <version>0.0.1-ALPHA</version>
+  <version>0.0.3-ALPHA</version>
 
   <name>polysight-auth-client</name>
 
@@ -21,14 +21,14 @@
     <dependency>
       <groupId>org.richardinnocent.polysight</groupId>
       <artifactId>polysight-auth-models</artifactId>
-      <version>0.0.1-ALPHA</version>
+      <version>0.0.3-ALPHA</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.richardinnocent.polysight.core/client -->
     <dependency>
       <groupId>org.richardinnocent.polysight</groupId>
       <artifactId>polysight-core-client</artifactId>
-      <version>0.0.1-ALPHA</version>
+      <version>0.0.2-ALPHA</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -56,6 +56,5 @@
     </dependency>
 
   </dependencies>
-
 
 </project>

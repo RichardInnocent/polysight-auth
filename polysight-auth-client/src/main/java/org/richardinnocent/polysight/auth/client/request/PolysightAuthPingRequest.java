@@ -2,6 +2,8 @@ package org.richardinnocent.polysight.auth.client.request;
 
 import org.richardinnocent.polysight.auth.client.service.PolysightAuthService;
 import org.richardinnocent.polysight.core.client.request.RestTemplateServiceRequest;
+import org.richardinnocent.polysight.core.client.service.MajorOnlyServiceVersion;
+import org.richardinnocent.polysight.core.client.service.PolysightServiceConfiguration;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -17,6 +19,7 @@ public class PolysightAuthPingRequest
   @Override
   protected ResponseEntity<Void> executeInternal(
       PolysightAuthService service, RestTemplate template) {
-    return template.getForEntity(service.getBaseUri() + "api/v1/ping", Void.class);
+    return template.getForEntity(service.getVersionedUri() + "/ping", Void.class);
   }
+
 }

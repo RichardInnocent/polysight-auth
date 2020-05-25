@@ -11,7 +11,7 @@
 
   <modules>
     <module>polysight-auth-models</module>
-      <module>polysight-auth-client</module>
+    <module>polysight-auth-client</module>
     <module>polysight-auth-server</module>
   </modules>
 

@@ -11,7 +11,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-public class PolysightAuthPingRequestTest {
+public class PolysightAuthAvailabilityCheckRequestTest {
 
   @Test
   public void testInternal() {
@@ -29,7 +29,7 @@ public class PolysightAuthPingRequestTest {
         .thenReturn(expectedResponse);
 
     assertEquals(
-        expectedResponse, new PolysightAuthPingRequest(service, templateBuilder).execute());
+        expectedResponse, new PolysightAuthAvailabilityCheckRequest(service, templateBuilder).execute());
   }
 
 }

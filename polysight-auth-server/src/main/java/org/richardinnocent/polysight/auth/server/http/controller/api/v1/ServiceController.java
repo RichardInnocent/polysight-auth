@@ -1,8 +1,8 @@
 package org.richardinnocent.polysight.auth.server.http.controller.api.v1;
 
-import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import org.richardinnocent.polysight.auth.server.security.PublicPrivateKeyProvider;
-import org.richardinnocent.polysight.auth.v0_0_1_alpha.model.security.PublicKeyResponse;
+import org.richardinnocent.polysight.auth.v0_0_3_alpha.model.security.ECPublicKeyResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,12 +35,14 @@ public class ServiceController {
    */
   @GetMapping(value = "/publickey", produces = MediaType.APPLICATION_JSON_VALUE)
   @SuppressWarnings("unused")
-  public PublicKeyResponse publicKey() {
-    PublicKey key = keyProvider.getPublicKey();
-    PublicKeyResponse response = new PublicKeyResponse();
+  public ECPublicKeyResponse publicKey() {
+    ECPublicKey key = (ECPublicKey) keyProvider.getPublicKey();
+    ECPublicKeyResponse response = new ECPublicKeyResponse();
     response.setAlgorithm(key.getAlgorithm());
     response.setFormat(key.getFormat());
     response.setKey(key.getEncoded());
+    response.setW(key.getW());
+    response.setParams(key.getParams());
     return response;
   }
 

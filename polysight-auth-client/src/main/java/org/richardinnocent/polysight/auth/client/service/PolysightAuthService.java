@@ -3,6 +3,9 @@ package org.richardinnocent.polysight.auth.client.service;
 import org.richardinnocent.polysight.core.client.service.AbstractPolysightService;
 import org.richardinnocent.polysight.core.client.service.PolysightServiceConfiguration;
 
+/**
+ * The authentication service that authenticates users.
+ */
 public class PolysightAuthService extends AbstractPolysightService {
 
   /**

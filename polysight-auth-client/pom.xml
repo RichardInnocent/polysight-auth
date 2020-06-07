@@ -21,14 +21,14 @@
     <dependency>
       <groupId>org.richardinnocent.polysight</groupId>
       <artifactId>polysight-auth-models</artifactId>
-      <version>0.0.3-ALPHA</version>
+      <version>0.0.4-ALPHA</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.richardinnocent.polysight.core/client -->
     <dependency>
       <groupId>org.richardinnocent.polysight</groupId>
       <artifactId>polysight-core-client</artifactId>
-      <version>0.0.3-ALPHA</version>
+      <version>0.0.4-ALPHA</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/junit/junit -->

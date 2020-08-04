@@ -8,6 +8,22 @@
   <groupId>org.richardinnocent.polysight</groupId>
   <version>0.0.4-ALPHA</version>
 
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Richard Innocent</name>
+      <organization>Richard Innocent</organization>
+      <organizationUrl>richardinnocent.org</organizationUrl>
+    </developer>
+  </developers>
+
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>

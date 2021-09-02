@@ -49,20 +49,21 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   private final PublicPrivateKeyProvider keyProvider;
   private final UserService userService;
 
-  public JWTAuthenticationFilter(AuthenticationManager authenticationManager,
-                                 @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider keyProvider,
-                                 UserService userService) {
+  public JWTAuthenticationFilter(
+      AuthenticationManager authenticationManager,
+      @Qualifier(Qualifiers.JWT) PublicPrivateKeyProvider keyProvider,
+      UserService userService) {
     this.authenticationManager = authenticationManager;
     this.keyProvider = keyProvider;
     this.userService = userService;
   }
 
   @Override
-  public Authentication attemptAuthentication(HttpServletRequest request,
-                                              HttpServletResponse response)
-      throws AuthenticationException, MissingParametersException {
-    Creator missingParamsCreator =
-        MissingParametersException.creator();
+  public Authentication attemptAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response
+  ) throws AuthenticationException, MissingParametersException {
+    Creator missingParamsCreator = MissingParametersException.creator();
     String email = missingParamsCreator.getOrLogMissing(EMAIL_KEY, request::getParameter);
     String password = missingParamsCreator.getOrLogMissing(PASSWORD_KEY, request::getParameter);
     missingParamsCreator.throwIfAnyMissing();
@@ -79,29 +80,36 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     return authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
-            email, password + user.getPasswordSalt(), Collections.emptyList()));
+            email, password + user.getPasswordSalt(), Collections.emptyList()
+        )
+    );
   }
 
   @Override
-  protected void successfulAuthentication(HttpServletRequest request,
-                                          HttpServletResponse response,
-                                          FilterChain chain,
-                                          Authentication auth)
-      throws IOException, ServletException {
+  protected void successfulAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain chain,
+      Authentication auth
+  ) throws IOException, ServletException {
     super.successfulAuthentication(request, response, chain, auth);
 
     User user = (User) auth.getPrincipal();
 
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, user.getUsername())
-           .withClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY, buildAuthoritiesClaimValue(user))
-           .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME_MILLIS))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
+    String token = JWT
+        .create()
+        .withIssuer(JwtFields.ISSUER)
+        .withClaim(JwtFields.EMAIL_CLAIM_KEY, user.getUsername())
+        .withClaim(JwtFields.AUTHORITIES_CLAIM_KEY, buildAuthoritiesClaimValue(user))
+        .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME_MILLIS))
+        .sign(
+            Algorithm.ECDSA512(
+                (ECPublicKey) keyProvider.getPublicKey(),
+                (ECPrivateKey) keyProvider.getPrivateKey()
+            )
+        );
 
-    Cookie jwtCookie = new Cookie(JWTCookieFields.COOKIE_NAME, token);
+    Cookie jwtCookie = new Cookie(JwtFields.HEADER_NAME, token);
     jwtCookie.setHttpOnly(true);
     jwtCookie.setMaxAge((int) (EXPIRATION_TIME_MILLIS / 1000L));
     response.addCookie(jwtCookie);

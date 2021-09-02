@@ -14,10 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -39,58 +37,47 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
   private final PublicPrivateKeyProvider keyProvider;
   private final AuthenticationFacade authenticationFacade;
 
-  JWTAuthorizationFilter(AuthenticationManager authManager,
-                         PublicPrivateKeyProvider keyProvider,
-                         AuthenticationFacade authenticationFacade) {
+  JWTAuthorizationFilter(
+      AuthenticationManager authManager,
+      PublicPrivateKeyProvider keyProvider,
+      AuthenticationFacade authenticationFacade
+  ) {
     super(authManager);
     this.keyProvider = keyProvider;
     this.authenticationFacade = authenticationFacade;
   }
 
   @Override
-  protected void doFilterInternal(HttpServletRequest req,
-                                  HttpServletResponse res,
-                                  FilterChain chain) throws IOException, ServletException {
-    Optional<UsernamePasswordAuthenticationToken> authToken = getAuthentication(req.getCookies());
-    if (authToken.isPresent()) {
-      authenticationFacade.setAuthentication(authToken.get());
-      if (req.getRequestURI().startsWith(req.getContextPath() + "/login")) {
-        res.sendRedirect("/profile");
-        return;
-      }
-    }
+  protected void doFilterInternal(
+      HttpServletRequest req,
+      HttpServletResponse res,
+      FilterChain chain
+  ) throws IOException, ServletException {
+    getAuthentication(req.getHeader(JwtFields.HEADER_NAME))
+        .ifPresent(authenticationFacade::setAuthentication);
     chain.doFilter(req, res);
   }
 
-  private Optional<UsernamePasswordAuthenticationToken> getAuthentication(Cookie[] cookies) {
-    if (cookies == null) {
-      return Optional.empty();
-    }
-    return Stream.of(cookies)
-                 .filter(cookie -> JWTCookieFields.COOKIE_NAME.equals(cookie.getName()))
-                 .findAny()
-                 .map(this::getAuthentication);
-  }
-
-  private UsernamePasswordAuthenticationToken getAuthentication(Cookie jwtCookie) {
-    return getAuthentication(jwtCookie.getValue());
-  }
-
-  private UsernamePasswordAuthenticationToken getAuthentication(String cookieValue) {
-    if (cookieValue != null) {
-       return getAuthentication(decodeJwt(cookieValue));
-    }
-    return null;
+  private Optional<UsernamePasswordAuthenticationToken> getAuthentication(
+      String authenticationHeader
+  ) {
+    return Optional
+        .ofNullable(authenticationHeader)
+        .map(header -> header.replace("Bearer ", ""))
+        .map(header -> getAuthentication(decodeJwt(header)));
   }
 
   private DecodedJWT decodeJwt(String token) {
     try {
-      return
-          JWT.require(
-              Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                 (ECPrivateKey) keyProvider.getPrivateKey()))
-             .build()
-             .verify(token);
+      return JWT
+          .require(
+              Algorithm.ECDSA512(
+                  (ECPublicKey) keyProvider.getPublicKey(),
+                  (ECPrivateKey) keyProvider.getPrivateKey()
+              )
+          )
+          .build()
+          .verify(token);
     } catch (JWTVerificationException e) {
       return null;
     }
@@ -100,19 +87,20 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     if (jwt == null) {
       return null;
     }
-    String email = jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString();
-    if (email != null) {
-      List<GrantedAuthority> authorities =
-          getAuthorities(jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
-      return new UsernamePasswordAuthenticationToken(email, null, authorities);
-    }
-    return null;
+    SimpleAuthenticatedUser user = SimpleAuthenticatedUser.of(
+        jwt.getClaim(JwtFields.USER_ID_CLAIM_KEY).asLong(),
+        jwt.getClaim(JwtFields.EMAIL_CLAIM_KEY).asString()
+    );
+    List<GrantedAuthority> authorities =
+        getAuthorities(jwt.getClaim(JwtFields.AUTHORITIES_CLAIM_KEY).asString());
+    return new UsernamePasswordAuthenticationToken(user, null, authorities);
   }
 
   private List<GrantedAuthority> getAuthorities(String rawAuthorities) {
-    return getAuthoritiesAsStrings(rawAuthorities).stream()
-                                                  .map(text -> (GrantedAuthority) () -> text)
-                                                  .collect(Collectors.toList());
+    return getAuthoritiesAsStrings(rawAuthorities)
+        .stream()
+        .map(text -> (GrantedAuthority) () -> text)
+        .collect(Collectors.toList());
   }
 
   private List<String> getAuthoritiesAsStrings(String rawAuthorities) {

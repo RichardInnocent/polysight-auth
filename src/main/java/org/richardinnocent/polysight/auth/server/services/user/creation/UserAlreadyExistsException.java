@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * Specifies that a user cannot be created because a user with a unique key that would be duplicated
  * by this user already exists.
  */
-@ResponseStatus(HttpStatus.BAD_REQUEST)
+@ResponseStatus(HttpStatus.CONFLICT)
 public class UserAlreadyExistsException extends UserCreationException {
 
   private UserAlreadyExistsException(String message) {

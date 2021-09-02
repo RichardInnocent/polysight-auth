@@ -92,7 +92,6 @@ public class JWTAuthenticationFilterTest {
     assertEquals(Collections.emptyList(), authToken.getAuthorities());
   }
 
-
   @Test
   public void testAttemptAuthenticationWithNoEmailProvided() {
     HttpServletRequest request = createRequestWithCredentials(null, "password");
@@ -167,16 +166,16 @@ public class JWTAuthenticationFilterTest {
     assertNotNull(cookie);
     assertTrue(cookie.isHttpOnly());
     assertEquals(864_000, cookie.getMaxAge());
-    assertEquals(JWTCookieFields.COOKIE_NAME, cookie.getName());
+    assertEquals(JwtFields.HEADER_NAME, cookie.getName());
 
     DecodedJWT jwt = JWT.require(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
                                                     (ECPrivateKey) keyProvider.getPrivateKey()))
                         .build()
                         .verify(cookie.getValue());
 
-    assertEquals(email, jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString());
+    assertEquals(email, jwt.getClaim(JwtFields.EMAIL_CLAIM_KEY).asString());
     assertEquals("[\"authority1\",\"authority2\"]",
-                 jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
+                 jwt.getClaim(JwtFields.AUTHORITIES_CLAIM_KEY).asString());
     Date expirationDate = jwt.getExpiresAt();
     assertTrue(expirationDate.after(new Date()));
   }
@@ -202,16 +201,16 @@ public class JWTAuthenticationFilterTest {
     assertNotNull(cookie);
     assertTrue(cookie.isHttpOnly());
     assertEquals(864_000, cookie.getMaxAge());
-    assertEquals(JWTCookieFields.COOKIE_NAME, cookie.getName());
+    assertEquals(JwtFields.HEADER_NAME, cookie.getName());
 
     DecodedJWT jwt = JWT.require(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
                                                     (ECPrivateKey) keyProvider.getPrivateKey()))
                         .build()
                         .verify(cookie.getValue());
 
-    assertEquals(email, jwt.getClaim(JWTCookieFields.EMAIL_CLAIM_KEY).asString());
+    assertEquals(email, jwt.getClaim(JwtFields.EMAIL_CLAIM_KEY).asString());
     assertEquals("[]",
-                 jwt.getClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY).asString());
+                 jwt.getClaim(JwtFields.AUTHORITIES_CLAIM_KEY).asString());
     Date expirationDate = jwt.getExpiresAt();
     assertTrue(expirationDate.after(new Date()));
   }

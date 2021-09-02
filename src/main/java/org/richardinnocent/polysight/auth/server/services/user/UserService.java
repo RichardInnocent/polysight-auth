@@ -27,6 +27,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * A service to interact with user information.
+ */
 @Service
 public class UserService implements UserDetailsService {
 
@@ -35,10 +38,12 @@ public class UserService implements UserDetailsService {
   private final PasswordEncoder passwordEncoder;
   private final StringKeyGenerator saltGenerator;
 
-  public UserService(PolysightUserDAO userDao,
-                     UserRoleAssignmentDAO userRoleAssignmentDAO,
-                     PasswordEncoder passwordEncoder,
-                     StringKeyGenerator saltGenerator) {
+  public UserService(
+      PolysightUserDAO userDao,
+      UserRoleAssignmentDAO userRoleAssignmentDAO,
+      PasswordEncoder passwordEncoder,
+      StringKeyGenerator saltGenerator
+  ) {
     this.userDao = userDao;
     this.userRoleAssignmentDAO = userRoleAssignmentDAO;
     this.passwordEncoder = passwordEncoder;
@@ -78,11 +83,12 @@ public class UserService implements UserDetailsService {
   }
 
   private List<GrantedAuthority> getAuthoritiesForUser(PolysightUser user) {
-    return userRoleAssignmentDAO.findAllRolesForUser(user)
-                                .stream()
-                                .map(UserRoleAssignment::getUserRole)
-                                .map(UserRole::getAuthority)
-                                .collect(Collectors.toList());
+    return userRoleAssignmentDAO
+        .findAllRolesForUser(user)
+        .stream()
+        .map(UserRoleAssignment::getUserRole)
+        .map(UserRole::getAuthority)
+        .collect(Collectors.toList());
   }
 
   /**

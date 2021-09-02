@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.Date;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,84 +42,61 @@ public class JWTAuthorizationFilterTest {
   }
 
   @Test
-  public void checkAuthenticationNotSetIfCookiesAreNull() throws IOException, ServletException {
-    when(request.getCookies()).thenReturn(null);
+  public void doFilterInternal_NoAuthorizationHeader_AuthorizationNotSet() throws IOException, ServletException {
+    when(request.getHeader(JwtFields.HEADER_NAME)).thenReturn(null);
+
     filter.doFilterInternal(request, response, chain);
+
     verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
   @Test
-  public void checkAuthenticationNotSetIfThereAreNoCookies() throws IOException, ServletException {
-    when(request.getCookies()).thenReturn(new Cookie[]{});
+  public void doFilterInternal_EmptyJwtCookie_AuthorizationNotSet() throws IOException, ServletException {
+    when(request.getHeader(JwtFields.HEADER_NAME)).thenReturn("");
+
     filter.doFilterInternal(request, response, chain);
+
     verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
   @Test
-  public void checkAuthenticationNotSetIfThereIsNoPolysightAuthCookie()
+  public void doFilterInternal_InvalidJwtCookie_AuthorizationNotSet()
       throws IOException, ServletException {
-    Cookie cookie1 = mock(Cookie.class);
-    when(cookie1.getName()).thenReturn("Not a Polysight cookie");
-    Cookie cookie2 = mock(Cookie.class);
-    when(cookie2.getName()).thenReturn("Not a Polysight cookie");
-    Cookie cookie3 = mock(Cookie.class);
-    when(cookie3.getName()).thenReturn("Not a Polysight cookie");
+    when(request.getHeader(JwtFields.HEADER_NAME)).thenReturn("not a valid token");
 
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie1, cookie2, cookie3});
     filter.doFilterInternal(request, response, chain);
+
     verify(authenticationFacade, never()).setAuthentication(any());
     verifyChainContinued();
   }
 
   @Test
-  public void testEmptyTokenCookieDoesNotSetContext() throws IOException, ServletException {
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-    filter.doFilterInternal(request, response, chain);
-    verify(authenticationFacade, never()).setAuthentication(any());
-    verifyChainContinued();
-  }
-
-  @Test
-  public void testInvalidJwtCookieDoesNotSetContext()
+  public void doFilterInternal_ValidJwtCookie_AuthorizationSet()
       throws IOException, ServletException {
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn("not a valid token");
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-
-    filter.doFilterInternal(request, response, chain);
-
-    verify(authenticationFacade, never()).setAuthentication(any());
-    verifyChainContinued();
-  }
-
-  @Test
-  public void testValidJwtCookieIsAppliedToSecurityContext() throws IOException, ServletException {
+    long id = 10L;
     String email = "test@polysight.com";
     String authority1 = "authority1";
     String authority2 = "authority2";
     String authority3 = "authority3";
     String authorities = "[\"" + authority1 + "\",\"" + authority2 + "\",\"" + authority3 + "\"]";
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, email)
-           .withClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY, authorities)
-           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
 
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn(token);
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-    when(request.getContextPath()).thenReturn("contextPath");
-    when(request.getRequestURI()).thenReturn("contextPath/profile");
+    String token = JWT
+        .create()
+        .withIssuer(JwtFields.ISSUER)
+        .withClaim(JwtFields.USER_ID_CLAIM_KEY, id)
+        .withClaim(JwtFields.EMAIL_CLAIM_KEY, email)
+        .withClaim(JwtFields.AUTHORITIES_CLAIM_KEY, authorities)
+        .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
+        .sign(
+            Algorithm.ECDSA512(
+                (ECPublicKey) keyProvider.getPublicKey(),
+                (ECPrivateKey) keyProvider.getPrivateKey()
+            )
+        );
+
+    when(request.getHeader(JwtFields.HEADER_NAME)).thenReturn("Bearer " + token);
 
     ArgumentCaptor<Authentication> authenticationCaptor =
         ArgumentCaptor.forClass(Authentication.class);
@@ -130,141 +106,21 @@ public class JWTAuthorizationFilterTest {
     verify(authenticationFacade, times(1))
         .setAuthentication(authenticationCaptor.capture());
 
-    assertEquals(email, authenticationCaptor.getValue().getPrincipal());
+    SimpleAuthenticatedUser expectedUser = SimpleAuthenticatedUser.of(id, email);
+    assertEquals(expectedUser, authenticationCaptor.getValue().getPrincipal());
     Collection<? extends GrantedAuthority> detectedAuthorities =
         authenticationCaptor.getValue().getAuthorities();
+
     assertTrue(
-        detectedAuthorities.stream().allMatch(auth -> authorities.contains(auth.getAuthority())));
+        detectedAuthorities.stream().allMatch(auth -> authorities.contains(auth.getAuthority()))
+    );
+
     assertEquals(3, detectedAuthorities.size());
-    verifyChainContinued();
-  }
-
-  @Test
-  public void testValidCookieIsAppliedToSecurityContextButIsRedirectedIfAccessingLoginPage()
-    throws IOException, ServletException {
-    String email = "test@polysight.com";
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, email)
-           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
-
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn(token);
-    when(request.getContextPath()).thenReturn("contextPath");
-    when(request.getRequestURI()).thenReturn("contextPath/login?hasParameters");
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-
-    ArgumentCaptor<Authentication> authenticationCaptor =
-        ArgumentCaptor.forClass(Authentication.class);
-
-    filter.doFilterInternal(request, response, chain);
-
-    verify(authenticationFacade, times(1))
-        .setAuthentication(authenticationCaptor.capture());
-
-    assertEquals(email, authenticationCaptor.getValue().getPrincipal());
-    verify(response, times(1)).sendRedirect("/profile");
-    verifyChainNotContinued();
-  }
-
-  @Test
-  public void testIfJwtCookieIsValidButHasNoEmailItIsNotAppliedToSecurityContext()
-      throws IOException, ServletException {
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
-
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn(token);
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-
-    filter.doFilterInternal(request, response, chain);
-
-    verify(authenticationFacade, never()).setAuthentication(any());
-    verifyChainContinued();
-  }
-
-  @Test
-  public void testIFJwtIsValidButHasNoRolesThenEmptyRolesAreAssignedToSecurityContext()
-      throws IOException, ServletException {
-    String email = "test@polysight.com";
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, email)
-           .withClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY, (String) null)
-           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
-
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn(token);
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-    when(request.getContextPath()).thenReturn("contextPath");
-    when(request.getRequestURI()).thenReturn("contextPath/profile");
-
-    ArgumentCaptor<Authentication> authenticationCaptor =
-        ArgumentCaptor.forClass(Authentication.class);
-
-    filter.doFilterInternal(request, response, chain);
-
-    verify(authenticationFacade, times(1))
-        .setAuthentication(authenticationCaptor.capture());
-
-    assertEquals(email, authenticationCaptor.getValue().getPrincipal());
-    assertTrue(authenticationCaptor.getValue().getAuthorities().isEmpty());
-    verifyChainContinued();
-  }
-
-  @Test
-  public void testIFJwtIsValidButHasUnparsableRolesThenEmptyRolesAreAssignedToSecurityContext()
-      throws IOException, ServletException {
-    String email = "test@polysight.com";
-    String token =
-        JWT.create()
-           .withIssuer(JWTCookieFields.ISSUER)
-           .withClaim(JWTCookieFields.EMAIL_CLAIM_KEY, email)
-           .withClaim(JWTCookieFields.AUTHORITIES_CLAIM_KEY, "not a parsable array")
-           .withExpiresAt(new Date(System.currentTimeMillis() + 10_000L))
-           .sign(Algorithm.ECDSA512((ECPublicKey) keyProvider.getPublicKey(),
-                                    (ECPrivateKey) keyProvider.getPrivateKey()));
-
-    Cookie cookie = mock(Cookie.class);
-    when(cookie.getName()).thenReturn(JWTCookieFields.COOKIE_NAME);
-    when(cookie.getValue()).thenReturn(token);
-    when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-    when(request.getContextPath()).thenReturn("contextPath");
-    when(request.getRequestURI()).thenReturn("contextPath/profile");
-
-    ArgumentCaptor<Authentication> authenticationCaptor =
-        ArgumentCaptor.forClass(Authentication.class);
-
-    filter.doFilterInternal(request, response, chain);
-
-    verify(authenticationFacade, times(1))
-        .setAuthentication(authenticationCaptor.capture());
-
-    assertEquals(email, authenticationCaptor.getValue().getPrincipal());
-    assertTrue(authenticationCaptor.getValue().getAuthorities().isEmpty());
     verifyChainContinued();
   }
 
   private void verifyChainContinued() throws IOException, ServletException {
     verify(chain, times(1)).doFilter(request, response);
   }
-
-  private void verifyChainNotContinued() throws IOException, ServletException {
-    verify(chain, never()).doFilter(request, response);
-  }
-
 
 }

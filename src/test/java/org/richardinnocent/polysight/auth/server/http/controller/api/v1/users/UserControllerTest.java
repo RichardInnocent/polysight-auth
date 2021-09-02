@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.richardinnocent.polysight.auth.server.models.user.AccountStatus;
 import org.richardinnocent.polysight.auth.server.models.user.PolysightUser;
+import org.richardinnocent.polysight.auth.server.models.user.RawPolysightUser;
 import org.richardinnocent.polysight.auth.server.security.SecurityContextAuthenticationFacade;
 import org.richardinnocent.polysight.auth.server.security.SimpleAuthenticatedUser;
 import org.richardinnocent.polysight.auth.server.services.user.UserService;
@@ -110,6 +111,19 @@ class UserControllerTest {
     assertEquals(EMAIL_ADDRESS, dto.getEmail());
     assertEquals(DATE_OF_BIRTH, dto.getDateOfBirth());
     assertEquals(ACCOUNT_STATUS, dto.getAccountStatus());
+  }
+
+  @Test
+  public void createUser_UserSpecified_UserCreated() {
+    RawPolysightUser rawUser = mock(RawPolysightUser.class);
+    when(userService.createUser(rawUser)).thenReturn(user);
+    UserDto userDto = controller.createUser(rawUser);
+    assertEquals(USER_ID, userDto.getId());
+    assertEquals(FIRST_NAME, userDto.getFirstName());
+    assertEquals(LAST_NAME, userDto.getLastName());
+    assertEquals(EMAIL_ADDRESS, userDto.getEmail());
+    assertEquals(DATE_OF_BIRTH, userDto.getDateOfBirth());
+    assertEquals(ACCOUNT_STATUS, userDto.getAccountStatus());
   }
 
   private static void ensureNotFoundExceptionIsCorrectlyFormed(UserNotFoundException e) {

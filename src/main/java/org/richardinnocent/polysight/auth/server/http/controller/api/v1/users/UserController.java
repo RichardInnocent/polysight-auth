@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -57,7 +58,7 @@ public class UserController {
       consumes = MediaType.APPLICATION_JSON_VALUE,
       produces = MediaType.APPLICATION_JSON_VALUE
   )
-  public UserDto createUser(@PathVariable RawPolysightUser rawPolysightUser) {
+  public UserDto createUser(@RequestBody RawPolysightUser rawPolysightUser) {
     PolysightUser user = userService.createUser(rawPolysightUser);
     return UserDto.forUser(user);
   }

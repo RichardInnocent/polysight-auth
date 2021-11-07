@@ -3,6 +3,7 @@ package org.richardinnocent.polysight.auth.server.models.user;
 import static org.richardinnocent.polysight.auth.server.models.user.PolysightUserConstraints.*;
 
 import java.time.LocalDate;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.Size;
 
 import javax.validation.constraints.NotNull;
@@ -32,6 +33,7 @@ public class RawPolysightUser {
         max = EMAIL_MAX_LENGTH,
         message = "A valid email address must be between 3 characters and " + EMAIL_MAX_LENGTH
             + " characters (inclusive)")
+  @Email(message = "The email address provided is invalid")
   private String email;
 
   @NotNull(message = "Date of birth must be specified")
